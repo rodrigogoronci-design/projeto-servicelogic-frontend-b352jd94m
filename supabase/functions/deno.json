@@ -4,6 +4,7 @@
     "scrape-servicelogic": 1,
     "process-excel": 1,
     "schedule-imports": 1,
-    "functions": 1
+    "test-sql-connection": 1,
+    "fetch-sql-data": 1
   }
 }
