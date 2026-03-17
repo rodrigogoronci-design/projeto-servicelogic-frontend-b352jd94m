@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { KeyRound, Save } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { KeyRound, Save, Server, Link as LinkIcon, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 
-export default function Credentials() {
+function ServicelogicCreds() {
   const { toast } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -22,24 +23,15 @@ export default function Credentials() {
   useEffect(() => {
     const fetchCreds = async () => {
       if (!user) return
-
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('credenciais_servicelogic' as any)
           .select('username, password_encrypted')
           .eq('usuario_id', user.id)
           .maybeSingle()
 
-        if (error) {
-          console.error('Error fetching credentials:', error)
-          return
-        }
-
-        if (data) {
+        if (data)
           setFormData({ username: data.username, password_encrypted: data.password_encrypted })
-        }
-      } catch (err) {
-        console.error('Failed to fetch credentials:', err)
       } finally {
         setIsLoading(false)
       }
@@ -53,17 +45,14 @@ export default function Credentials() {
     setIsSubmitting(true)
 
     try {
-      const { data: existing, error: existingError } = await supabase
+      const { data: existing } = await supabase
         .from('credenciais_servicelogic' as any)
         .select('id')
         .eq('usuario_id', user.id)
         .maybeSingle()
-
-      if (existingError) throw existingError
-
       let error
       if (existing) {
-        const { error: updateError } = await supabase
+        const res = await supabase
           .from('credenciais_servicelogic' as any)
           .update({
             username: formData.username,
@@ -71,103 +60,340 @@ export default function Credentials() {
             atualizado_em: new Date().toISOString(),
           })
           .eq('id', existing.id)
-        error = updateError
+        error = res.error
       } else {
-        const { error: insertError } = await supabase
-          .from('credenciais_servicelogic' as any)
-          .insert({
-            usuario_id: user.id,
-            username: formData.username,
-            password_encrypted: formData.password_encrypted,
-          })
-        error = insertError
+        const res = await supabase.from('credenciais_servicelogic' as any).insert({
+          usuario_id: user.id,
+          username: formData.username,
+          password_encrypted: formData.password_encrypted,
+        })
+        error = res.error
       }
 
       if (error) throw error
-
-      toast({
-        title: 'Credenciais Atualizadas',
-        description: 'As configurações de acesso ao legado foram salvas com sucesso.',
-      })
+      toast({ title: 'Credenciais Atualizadas', description: 'Configurações Servicelogic salvas.' })
     } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message || 'Falha ao atualizar credenciais.',
-        variant: 'destructive',
-      })
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit}>
+      <CardHeader>
+        <CardTitle>Credenciais Servicelogic (Legado)</CardTitle>
+        <CardDescription>
+          Dados utilizados pelas automações para extrair relatórios via web scraping.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {isLoading ? (
+          <div className="h-24 flex items-center justify-center text-muted-foreground">
+            <Loader2 className="animate-spin size-5" />
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuário</Label>
+              <Input
+                id="username"
+                required
+                placeholder="ex: admin_legado"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                className="focus-visible:ring-sl-orange"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password_encrypted">Senha</Label>
+              <Input
+                id="password_encrypted"
+                type="password"
+                required
+                placeholder="••••••••"
+                value={formData.password_encrypted}
+                onChange={(e) => setFormData({ ...formData, password_encrypted: e.target.value })}
+                className="focus-visible:ring-sl-orange"
+              />
+            </div>
+            <div className="pt-4 border-t flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md"
+              >
+                <Save className="size-4" /> {isSubmitting ? 'Salvando...' : 'Salvar Credenciais'}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </form>
+  )
+}
+
+function SqlServerCreds() {
+  const { toast } = useToast()
+  const { user } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const [formData, setFormData] = useState({
+    server_ip: '',
+    database_name: '',
+    username: '',
+    password_encrypted: '',
+    table_name: 'DWBI_PBIv2_Conhecimento',
+  })
+
+  useEffect(() => {
+    const fetchCreds = async () => {
+      if (!user) return
+      try {
+        const { data } = await supabase
+          .from('credenciais_sql_server' as any)
+          .select('*')
+          .eq('usuario_id', user.id)
+          .maybeSingle()
+
+        if (data) {
+          setFormData({
+            server_ip: data.server_ip,
+            database_name: data.database_name,
+            username: data.username,
+            password_encrypted: data.password_encrypted,
+            table_name: data.table_name,
+          })
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCreds()
+  }, [user])
+
+  const handleTest = async () => {
+    if (
+      !formData.server_ip ||
+      !formData.database_name ||
+      !formData.username ||
+      !formData.password_encrypted
+    ) {
+      return toast({
+        title: 'Atenção',
+        description: 'Preencha todos os campos para testar.',
+        variant: 'destructive',
+      })
+    }
+    setIsTesting(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('test-sql-connection', {
+        body: { ...formData, usuario_id: user?.id },
+      })
+      if (error || data?.error) throw new Error(error?.message || data?.error)
+      toast({
+        title: 'Sucesso!',
+        description: 'Conexão com SQL Server estabelecida.',
+        className: 'bg-emerald-50 border-emerald-200',
+      })
+    } catch (err: any) {
+      toast({ title: 'Falha na Conexão', description: err.message, variant: 'destructive' })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setIsSubmitting(true)
+
+    try {
+      const { data: existing } = await supabase
+        .from('credenciais_sql_server' as any)
+        .select('id')
+        .eq('usuario_id', user.id)
+        .maybeSingle()
+      const payload = {
+        usuario_id: user.id,
+        ...formData,
+        atualizado_em: new Date().toISOString(),
+      }
+
+      let error
+      if (existing) {
+        const res = await supabase
+          .from('credenciais_sql_server' as any)
+          .update(payload)
+          .eq('id', existing.id)
+        error = res.error
+      } else {
+        const res = await supabase.from('credenciais_sql_server' as any).insert(payload)
+        error = res.error
+      }
+
+      if (error) throw error
+      toast({
+        title: 'Credenciais Atualizadas',
+        description: 'Acesso ao banco SQL Server salvo com sucesso.',
+      })
+    } catch (error: any) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <CardHeader>
+        <CardTitle>Conexão SQL Server</CardTitle>
+        <CardDescription>
+          Parâmetros para acesso direto ao banco de dados e atualização do Dashboard.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {isLoading ? (
+          <div className="h-24 flex items-center justify-center text-muted-foreground">
+            <Loader2 className="animate-spin size-5" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="server_ip">
+                  IP do Servidor <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="server_ip"
+                  required
+                  placeholder="ex: 192.168.1.100"
+                  value={formData.server_ip}
+                  onChange={(e) => setFormData({ ...formData, server_ip: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="database_name">
+                  Nome do Database <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="database_name"
+                  required
+                  placeholder="ex: BD_PRODUCAO"
+                  value={formData.database_name}
+                  onChange={(e) => setFormData({ ...formData, database_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sql_username">
+                  Usuário (SQL Login) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="sql_username"
+                  required
+                  placeholder="ex: sa"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sql_password">
+                  Senha <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="sql_password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password_encrypted}
+                  onChange={(e) => setFormData({ ...formData, password_encrypted: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="table_name">
+                Nome da Tabela de Fatos <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="table_name"
+                required
+                value={formData.table_name}
+                onChange={(e) => setFormData({ ...formData, table_name: e.target.value })}
+              />
+            </div>
+            <div className="pt-4 border-t flex flex-col-reverse sm:flex-row justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTest}
+                disabled={isTesting || isSubmitting}
+                className="gap-2 border-sl-blue text-sl-blue hover:bg-blue-50"
+              >
+                {isTesting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <LinkIcon className="size-4" />
+                )}
+                Testar Conexão
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isTesting}
+                className="gap-2 bg-sl-orange hover:bg-sl-orangeLight text-white shadow-md"
+              >
+                <Save className="size-4" />
+                {isSubmitting ? 'Salvando...' : 'Salvar Credenciais'}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </form>
+  )
+}
+
+export default function Credentials() {
+  return (
+    <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <KeyRound className="size-6 text-sl-orange" /> Configurações de Credenciais
+        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2 text-slate-800">
+          <KeyRound className="size-7 text-sl-orange" /> Gestão de Credenciais
         </h2>
-        <p className="text-muted-foreground">
-          Gerencie as credenciais utilizadas para acessar o sistema legado.
+        <p className="text-slate-500 mt-1">
+          Configure os acessos necessários para o funcionamento das integrações.
         </p>
       </div>
 
-      <Card className="border-0 shadow-subtle bg-white">
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Credenciais do Sistema Legado</CardTitle>
-            <CardDescription>
-              Estes dados são utilizados pelas automações para extrair relatórios da base anterior.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isLoading ? (
-              <div className="h-24 flex items-center justify-center text-muted-foreground">
-                Carregando...
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Usuário Legado</Label>
-                  <Input
-                    id="username"
-                    required
-                    placeholder="ex: admin_legado"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="focus-visible:ring-sl-orange"
-                  />
-                </div>
+      <Tabs defaultValue="servicelogic" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 p-1 rounded-lg">
+          <TabsTrigger
+            value="servicelogic"
+            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Servicelogic
+          </TabsTrigger>
+          <TabsTrigger
+            value="sqlserver"
+            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2"
+          >
+            <Server className="size-4" /> SQL Server
+          </TabsTrigger>
+        </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password_encrypted">Senha Legada</Label>
-                  <Input
-                    id="password_encrypted"
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={formData.password_encrypted}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password_encrypted: e.target.value })
-                    }
-                    className="focus-visible:ring-sl-orange"
-                  />
-                </div>
+        <TabsContent value="servicelogic" className="mt-4 animate-fade-in">
+          <Card className="border-slate-200 shadow-sm bg-white">
+            <ServicelogicCreds />
+          </Card>
+        </TabsContent>
 
-                <div className="pt-4 border-t flex justify-end">
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md"
-                  >
-                    <Save className="size-4" />
-                    {isSubmitting ? 'Salvando...' : 'Salvar Credenciais'}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </form>
-      </Card>
+        <TabsContent value="sqlserver" className="mt-4 animate-fade-in">
+          <Card className="border-slate-200 shadow-sm bg-white border-t-4 border-t-sl-blue">
+            <SqlServerCreds />
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/MainLayout'
 import Index from './pages/Index'
 import Dashboard from './pages/Dashboard'
+import DashboardSQL from './pages/DashboardSQL'
 import ReportList from './pages/Reports/ReportList'
 import NewReport from './pages/Reports/NewReport'
 import ImportedData from './pages/Data/ImportedData'
@@ -33,6 +34,7 @@ const App = () => (
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="dashboard-sql" element={<DashboardSQL />} />
             <Route path="relatorios" element={<ReportList />} />
             <Route path="relatorios/novo" element={<NewReport />} />
             <Route path="relatorios/:id/editar" element={<NewReport />} />
