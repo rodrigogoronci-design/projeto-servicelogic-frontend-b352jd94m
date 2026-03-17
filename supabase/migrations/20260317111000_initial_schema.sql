@@ -1,4 +1,4 @@
-DO $
+DO $$
 DECLARE
   admin_id uuid := gen_random_uuid();
 BEGIN
@@ -84,7 +84,7 @@ BEGIN
     (gen_random_uuid(), admin_id, '11111111-1111-1111-1111-111111111111'::uuid, NOW() - interval '1 day', 'sucesso', null),
     (gen_random_uuid(), admin_id, '22222222-2222-2222-2222-222222222222'::uuid, NOW() - interval '2 hours', 'erro', 'Falha na autenticação do sistema legado');
 
-END $;
+END $$;
 
 -- RLS
 ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
@@ -98,3 +98,4 @@ CREATE POLICY "authenticated_all_cred" ON public.credenciais_sistema_legado FOR 
 CREATE POLICY "authenticated_all_conf" ON public.configuracao_relatorios FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "authenticated_all_dados" ON public.dados_importados FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "authenticated_all_log" ON public.log_execucoes FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
