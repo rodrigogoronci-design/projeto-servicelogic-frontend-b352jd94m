@@ -216,10 +216,11 @@ function SqlServerCreds() {
         .select('id')
         .eq('usuario_id', user.id)
         .maybeSingle()
+
       const payload = {
         usuario_id: user.id,
         ...formData,
-        atualizado_em: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
       let error

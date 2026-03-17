@@ -9,6 +9,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      cache_dados_sql: {
+        Row: {
+          data: Json
+          id: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          data?: Json
+          id?: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          data?: Json
+          id?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       configuracao_relatorios: {
         Row: {
           ativo: boolean | null
@@ -73,6 +94,42 @@ export type Database = {
           criado_em?: string
           id?: string
           password_encrypted?: string
+          username?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      credenciais_sql_server: {
+        Row: {
+          created_at: string
+          database_name: string
+          id: string
+          password_encrypted: string
+          server_ip: string
+          table_name: string
+          updated_at: string
+          username: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          database_name: string
+          id?: string
+          password_encrypted: string
+          server_ip: string
+          table_name?: string
+          updated_at?: string
+          username: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          database_name?: string
+          id?: string
+          password_encrypted?: string
+          server_ip?: string
+          table_name?: string
+          updated_at?: string
           username?: string
           usuario_id?: string
         }
@@ -156,6 +213,33 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      }
+      log_execucoes_sql: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          operation_type: string
+          status: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          operation_type: string
+          status: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          operation_type?: string
+          status?: string
+          usuario_id?: string
+        }
+        Relationships: []
       }
       usuarios: {
         Row: {
@@ -325,6 +409,11 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: cache_dados_sql
+//   id: uuid (not null, default: gen_random_uuid())
+//   usuario_id: uuid (not null)
+//   data: jsonb (not null, default: '{}'::jsonb)
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: configuracao_relatorios
 //   id: uuid (not null, default: gen_random_uuid())
 //   usuario_id: uuid (not null)
@@ -344,6 +433,16 @@ export const Constants = {
 //   password_encrypted: text (not null)
 //   atualizado_em: timestamp with time zone (not null, default: now())
 //   criado_em: timestamp with time zone (not null, default: now())
+// Table: credenciais_sql_server
+//   id: uuid (not null, default: gen_random_uuid())
+//   usuario_id: uuid (not null)
+//   server_ip: text (not null)
+//   database_name: text (not null)
+//   username: text (not null)
+//   password_encrypted: text (not null)
+//   table_name: text (not null, default: 'DWBI_PBIv2_Conhecimento'::text)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: dados_importados
 //   id: uuid (not null, default: gen_random_uuid())
 //   usuario_id: uuid (not null)
@@ -361,6 +460,13 @@ export const Constants = {
 //   data_execucao: timestamp with time zone (not null, default: now())
 //   status: text (not null)
 //   mensagem_erro: text (nullable)
+// Table: log_execucoes_sql
+//   id: uuid (not null, default: gen_random_uuid())
+//   usuario_id: uuid (not null)
+//   operation_type: text (not null)
+//   status: text (not null)
+//   error_message: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: usuarios
 //   id: uuid (not null)
 //   nome: text (not null)
@@ -368,12 +474,19 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
+// Table: cache_dados_sql
+//   PRIMARY KEY cache_dados_sql_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY cache_dados_sql_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   UNIQUE cache_dados_sql_usuario_id_key: UNIQUE (usuario_id)
 // Table: configuracao_relatorios
 //   PRIMARY KEY configuracao_relatorios_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY configuracao_relatorios_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: credenciais_servicelogic
 //   FOREIGN KEY credenciais_servicelogic_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY credenciais_sistema_legado_pkey: PRIMARY KEY (id)
+// Table: credenciais_sql_server
+//   PRIMARY KEY credenciais_sql_server_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY credenciais_sql_server_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: dados_importados
 //   FOREIGN KEY dados_importados_configuracao_relatorio_id_fkey: FOREIGN KEY (configuracao_relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE SET NULL
 //   PRIMARY KEY dados_importados_pkey: PRIMARY KEY (id)
@@ -382,17 +495,28 @@ export const Constants = {
 //   FOREIGN KEY log_execucoes_configuracao_relatorio_id_fkey: FOREIGN KEY (configuracao_relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE CASCADE
 //   PRIMARY KEY log_execucoes_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY log_execucoes_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: log_execucoes_sql
+//   PRIMARY KEY log_execucoes_sql_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY log_execucoes_sql_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: usuarios
 //   FOREIGN KEY usuarios_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY usuarios_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: cache_dados_sql
+//   Policy "auth_user_cache_sql" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
 // Table: configuracao_relatorios
 //   Policy "auth_user_configuracoes" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (usuario_id = auth.uid())
 //     WITH CHECK: (usuario_id = auth.uid())
 // Table: credenciais_servicelogic
 //   Policy "auth_user_credenciais" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
+// Table: credenciais_sql_server
+//   Policy "auth_user_credenciais_sql" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (usuario_id = auth.uid())
 //     WITH CHECK: (usuario_id = auth.uid())
 // Table: dados_importados
@@ -403,7 +527,15 @@ export const Constants = {
 //   Policy "auth_user_logs" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (usuario_id = auth.uid())
 //     WITH CHECK: (usuario_id = auth.uid())
+// Table: log_execucoes_sql
+//   Policy "auth_user_logs_sql" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
 // Table: usuarios
 //   Policy "authenticated_user_usuarios" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (id = auth.uid())
 //     WITH CHECK: (id = auth.uid())
+
+// --- INDEXES ---
+// Table: cache_dados_sql
+//   CREATE UNIQUE INDEX cache_dados_sql_usuario_id_key ON public.cache_dados_sql USING btree (usuario_id)
