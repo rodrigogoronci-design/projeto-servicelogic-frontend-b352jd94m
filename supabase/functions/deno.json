@@ -7,7 +7,7 @@
     "test-sql-connection": 1,
     "fetch-sql-data": 3,
     "get-sql-tables": 1,
-    "get-chart-preview": 2,
+    "get-chart-preview": 3,
     "functions": 1
   }
 }

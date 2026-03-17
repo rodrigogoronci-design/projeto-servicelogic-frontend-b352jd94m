@@ -30,12 +30,8 @@ interface ChartRendererProps {
 }
 
 export function ChartRenderer({ data, config }: ChartRendererProps) {
-  if (!config || data.length === 0) return null
-
-  const type = config.tipo_grafico || 'bar'
-
   const campos = useMemo(() => {
-    return (config.campos_selecionados || []).map((c: any, i) => {
+    return (config?.campos_selecionados || []).map((c: any, i) => {
       if (typeof c === 'string') {
         return {
           field_name: c,
@@ -47,7 +43,11 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
       }
       return c as ChartField
     })
-  }, [config.campos_selecionados])
+  }, [config?.campos_selecionados])
+
+  if (!config || data.length === 0) return null
+
+  const type = config.tipo_grafico || 'bar'
 
   const dimensions = campos.filter((c) => c.type === 'dimension')
   const metrics = campos.filter((c) => c.type === 'metric')
@@ -83,7 +83,7 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
 
   const renderContent = () => {
     switch (type) {
-      case 'bar':
+      case 'bar': {
         return (
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -100,7 +100,8 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             )}
           </BarChart>
         )
-      case 'line':
+      }
+      case 'line': {
         return (
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -127,7 +128,8 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             )}
           </LineChart>
         )
-      case 'pie':
+      }
+      case 'pie': {
         const pieMetric = metrics[0]?.display_label || metrics[0]?.field_name || 'valor'
         return (
           <PieChart>
@@ -148,7 +150,8 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             <ChartLegend content={<ChartLegendContent />} />
           </PieChart>
         )
-      case 'scatter':
+      }
+      case 'scatter': {
         const xKey = dimensions[0]?.display_label || dimensions[0]?.field_name || 'x'
         const yKey = metrics[0]?.display_label || metrics[0]?.field_name || 'y'
         return (
@@ -160,8 +163,10 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             <Scatter name={config.nome_tabela} data={data} fill={metrics[0]?.color || '#FF8C00'} />
           </ScatterChart>
         )
-      default:
+      }
+      default: {
         return <div className="text-slate-500">Tipo de gráfico não suportado.</div>
+      }
     }
   }
 
