@@ -12,6 +12,7 @@ import NewReport from './pages/Reports/NewReport'
 import ImportedData from './pages/Data/ImportedData'
 import DataDetails from './pages/Data/DataDetails'
 import Credentials from './pages/Settings/Credentials'
+import ExecutionLogs from './pages/Logs/ExecutionLogs'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="dados" element={<ImportedData />} />
             <Route path="dados/:id" element={<DataDetails />} />
             <Route path="credenciais" element={<Credentials />} />
+            <Route path="logs" element={<ExecutionLogs />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

@@ -12,168 +12,147 @@ export type Database = {
       configuracao_relatorios: {
         Row: {
           ativo: boolean | null
+          atualizado_em: string
           caminho_relatorio: string
-          created_at: string
-          frequencia_horas: number | null
+          criado_em: string
+          data_final: string | null
+          data_inicial: string | null
+          frequencia_horas: number
           id: string
           nome_relatorio: string
-          parametros: Json | null
           sistema_origem: string
-          user_id: string
+          usuario_id: string
         }
         Insert: {
           ativo?: boolean | null
+          atualizado_em?: string
           caminho_relatorio: string
-          created_at?: string
-          frequencia_horas?: number | null
+          criado_em?: string
+          data_final?: string | null
+          data_inicial?: string | null
+          frequencia_horas?: number
           id?: string
           nome_relatorio: string
-          parametros?: Json | null
           sistema_origem?: string
-          user_id: string
+          usuario_id: string
         }
         Update: {
           ativo?: boolean | null
+          atualizado_em?: string
           caminho_relatorio?: string
-          created_at?: string
-          frequencia_horas?: number | null
+          criado_em?: string
+          data_final?: string | null
+          data_inicial?: string | null
+          frequencia_horas?: number
           id?: string
           nome_relatorio?: string
-          parametros?: Json | null
           sistema_origem?: string
-          user_id?: string
+          usuario_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'configuracao_relatorios_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
-      credenciais_sistema_legado: {
+      credenciais_servicelogic: {
         Row: {
+          atualizado_em: string
+          criado_em: string
           id: string
-          password: string
-          updated_at: string
-          user_id: string
+          password_encrypted: string
           username: string
+          usuario_id: string
         }
         Insert: {
+          atualizado_em?: string
+          criado_em?: string
           id?: string
-          password: string
-          updated_at?: string
-          user_id: string
+          password_encrypted: string
           username: string
+          usuario_id: string
         }
         Update: {
+          atualizado_em?: string
+          criado_em?: string
           id?: string
-          password?: string
-          updated_at?: string
-          user_id?: string
+          password_encrypted?: string
           username?: string
+          usuario_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'credenciais_sistema_legado_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       dados_importados: {
         Row: {
+          configuracao_relatorio_id: string | null
+          dados: Json
           data_importacao: string
           error_details: string | null
           id: string
-          payload: Json | null
           registros: number | null
-          relatorio_id: string | null
           source: string | null
           status: string
-          user_id: string
+          usuario_id: string
         }
         Insert: {
+          configuracao_relatorio_id?: string | null
+          dados?: Json
           data_importacao?: string
           error_details?: string | null
           id?: string
-          payload?: Json | null
           registros?: number | null
-          relatorio_id?: string | null
-          source?: string | null
-          status: string
-          user_id: string
-        }
-        Update: {
-          data_importacao?: string
-          error_details?: string | null
-          id?: string
-          payload?: Json | null
-          registros?: number | null
-          relatorio_id?: string | null
           source?: string | null
           status?: string
-          user_id?: string
+          usuario_id: string
+        }
+        Update: {
+          configuracao_relatorio_id?: string | null
+          dados?: Json
+          data_importacao?: string
+          error_details?: string | null
+          id?: string
+          registros?: number | null
+          source?: string | null
+          status?: string
+          usuario_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'dados_importados_relatorio_id_fkey'
-            columns: ['relatorio_id']
+            foreignKeyName: 'dados_importados_configuracao_relatorio_id_fkey'
+            columns: ['configuracao_relatorio_id']
             isOneToOne: false
             referencedRelation: 'configuracao_relatorios'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'dados_importados_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
       }
       log_execucoes: {
         Row: {
+          configuracao_relatorio_id: string | null
           data_execucao: string
           id: string
           mensagem_erro: string | null
-          relatorio_id: string | null
           status: string
-          user_id: string
+          usuario_id: string
         }
         Insert: {
+          configuracao_relatorio_id?: string | null
           data_execucao?: string
           id?: string
           mensagem_erro?: string | null
-          relatorio_id?: string | null
           status: string
-          user_id: string
+          usuario_id: string
         }
         Update: {
+          configuracao_relatorio_id?: string | null
           data_execucao?: string
           id?: string
           mensagem_erro?: string | null
-          relatorio_id?: string | null
           status?: string
-          user_id?: string
+          usuario_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'log_execucoes_relatorio_id_fkey'
-            columns: ['relatorio_id']
+            foreignKeyName: 'log_execucoes_configuracao_relatorio_id_fkey'
+            columns: ['configuracao_relatorio_id']
             isOneToOne: false
             referencedRelation: 'configuracao_relatorios'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'log_execucoes_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'usuarios'
             referencedColumns: ['id']
           },
         ]
@@ -348,34 +327,37 @@ export const Constants = {
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
 // Table: configuracao_relatorios
 //   id: uuid (not null, default: gen_random_uuid())
-//   user_id: uuid (not null)
+//   usuario_id: uuid (not null)
 //   nome_relatorio: text (not null)
 //   sistema_origem: text (not null, default: 'Servicelogic'::text)
 //   caminho_relatorio: text (not null)
-//   parametros: jsonb (nullable, default: '{}'::jsonb)
-//   frequencia_horas: numeric (nullable, default: 24)
+//   frequencia_horas: integer (not null, default: 24)
 //   ativo: boolean (nullable, default: true)
-//   created_at: timestamp with time zone (not null, default: now())
-// Table: credenciais_sistema_legado
+//   criado_em: timestamp with time zone (not null, default: now())
+//   atualizado_em: timestamp with time zone (not null, default: now())
+//   data_inicial: date (nullable)
+//   data_final: date (nullable)
+// Table: credenciais_servicelogic
 //   id: uuid (not null, default: gen_random_uuid())
-//   user_id: uuid (not null)
+//   usuario_id: uuid (not null)
 //   username: text (not null)
-//   password: text (not null)
-//   updated_at: timestamp with time zone (not null, default: now())
+//   password_encrypted: text (not null)
+//   atualizado_em: timestamp with time zone (not null, default: now())
+//   criado_em: timestamp with time zone (not null, default: now())
 // Table: dados_importados
 //   id: uuid (not null, default: gen_random_uuid())
-//   user_id: uuid (not null)
+//   usuario_id: uuid (not null)
 //   data_importacao: timestamp with time zone (not null, default: now())
-//   status: text (not null)
+//   status: text (not null, default: 'processado'::text)
 //   registros: numeric (nullable, default: 0)
 //   source: text (nullable, default: 'Servicelogic'::text)
 //   error_details: text (nullable)
-//   payload: jsonb (nullable, default: '{}'::jsonb)
-//   relatorio_id: uuid (nullable)
+//   dados: jsonb (not null, default: '{}'::jsonb)
+//   configuracao_relatorio_id: uuid (nullable)
 // Table: log_execucoes
 //   id: uuid (not null, default: gen_random_uuid())
-//   user_id: uuid (not null)
-//   relatorio_id: uuid (nullable)
+//   usuario_id: uuid (not null)
+//   configuracao_relatorio_id: uuid (nullable)
 //   data_execucao: timestamp with time zone (not null, default: now())
 //   status: text (not null)
 //   mensagem_erro: text (nullable)
@@ -388,39 +370,39 @@ export const Constants = {
 // --- CONSTRAINTS ---
 // Table: configuracao_relatorios
 //   PRIMARY KEY configuracao_relatorios_pkey: PRIMARY KEY (id)
-//   FOREIGN KEY configuracao_relatorios_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
-// Table: credenciais_sistema_legado
+//   FOREIGN KEY configuracao_relatorios_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: credenciais_servicelogic
+//   FOREIGN KEY credenciais_servicelogic_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY credenciais_sistema_legado_pkey: PRIMARY KEY (id)
-//   FOREIGN KEY credenciais_sistema_legado_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 // Table: dados_importados
+//   FOREIGN KEY dados_importados_configuracao_relatorio_id_fkey: FOREIGN KEY (configuracao_relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE SET NULL
 //   PRIMARY KEY dados_importados_pkey: PRIMARY KEY (id)
-//   FOREIGN KEY dados_importados_relatorio_id_fkey: FOREIGN KEY (relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE SET NULL
-//   FOREIGN KEY dados_importados_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+//   FOREIGN KEY dados_importados_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: log_execucoes
+//   FOREIGN KEY log_execucoes_configuracao_relatorio_id_fkey: FOREIGN KEY (configuracao_relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE CASCADE
 //   PRIMARY KEY log_execucoes_pkey: PRIMARY KEY (id)
-//   FOREIGN KEY log_execucoes_relatorio_id_fkey: FOREIGN KEY (relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE CASCADE
-//   FOREIGN KEY log_execucoes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+//   FOREIGN KEY log_execucoes_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: usuarios
 //   FOREIGN KEY usuarios_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY usuarios_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
 // Table: configuracao_relatorios
-//   Policy "authenticated_user_conf" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: (user_id = auth.uid())
-//     WITH CHECK: (user_id = auth.uid())
-// Table: credenciais_sistema_legado
-//   Policy "authenticated_user_cred" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: (user_id = auth.uid())
-//     WITH CHECK: (user_id = auth.uid())
+//   Policy "auth_user_configuracoes" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
+// Table: credenciais_servicelogic
+//   Policy "auth_user_credenciais" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
 // Table: dados_importados
-//   Policy "authenticated_user_dados" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: (user_id = auth.uid())
-//     WITH CHECK: (user_id = auth.uid())
+//   Policy "auth_user_dados" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
 // Table: log_execucoes
-//   Policy "authenticated_user_log" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: (user_id = auth.uid())
-//     WITH CHECK: (user_id = auth.uid())
+//   Policy "auth_user_logs" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (usuario_id = auth.uid())
+//     WITH CHECK: (usuario_id = auth.uid())
 // Table: usuarios
 //   Policy "authenticated_user_usuarios" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (id = auth.uid())
