@@ -1,8 +1,8 @@
 {
   "_versions": {
     "auth-servicelogic": 1,
-    "extract-reports": 1,
-    "process-data": 1,
+    "extract-reports": 2,
+    "process-data": 2,
     "cron-scheduler": 1
   }
 }

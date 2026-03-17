@@ -7,9 +7,10 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/MainLayout'
 import Index from './pages/Index'
 import Dashboard from './pages/Dashboard'
+import ReportList from './pages/Reports/ReportList'
 import NewReport from './pages/Reports/NewReport'
 import ImportedData from './pages/Data/ImportedData'
-import Logs from './pages/Logs/Logs'
+import DataDetails from './pages/Data/DataDetails'
 import Credentials from './pages/Settings/Credentials'
 import NotFound from './pages/NotFound'
 
@@ -31,9 +32,11 @@ const App = () => (
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="relatorios" element={<ReportList />} />
             <Route path="relatorios/novo" element={<NewReport />} />
+            <Route path="relatorios/:id/editar" element={<NewReport />} />
             <Route path="dados" element={<ImportedData />} />
-            <Route path="logs" element={<Logs />} />
+            <Route path="dados/:id" element={<DataDetails />} />
             <Route path="credenciais" element={<Credentials />} />
           </Route>
 
