@@ -1,79 +1,88 @@
-import { createClient } from 'npm:@supabase/supabase-js';
-import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'npm:@supabase/supabase-js'
+import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { nome_tabela, campos_selecionados, tipo_grafico, usuario_id } = await req.json();
+    const { nome_tabela, campos_selecionados, tipo_grafico, usuario_id } = await req.json()
 
     if (!nome_tabela || !campos_selecionados || !tipo_grafico || !usuario_id) {
-      throw new Error('Parâmetros ausentes para gerar preview.');
+      throw new Error('Parâmetros ausentes para gerar preview.')
     }
 
     // Simulate DB Aggregation Query Latency
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
-    // MOCK DATA GENERATION based on requested chart type to ensure Recharts compatibility
-    let chartData: any[] = [];
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul'];
-    const categories = ['Tecnologia', 'Serviços', 'Varejo', 'Indústria', 'Outros'];
+    // Normalize campos_selecionados
+    const normalized = (campos_selecionados || []).map((c: any) => {
+      if (typeof c === 'string') return { field_name: c, type: 'metric', display_label: c }
+      return c
+    })
 
-    // Generate sensible mock data depending on the chart type
+    const dimensions = normalized.filter((c: any) => c.type === 'dimension')
+    const metrics = normalized.filter((c: any) => c.type === 'metric')
+
+    let chartData: any[] = []
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul']
+    const categories = ['Tecnologia', 'Serviços', 'Varejo', 'Indústria', 'Outros']
+
     if (tipo_grafico === 'bar' || tipo_grafico === 'line') {
-      // Time-series or categorical trend data
-      const labels = nome_tabela.includes('Mensal') || nome_tabela.includes('DWBI') ? months : categories;
-      
-      chartData = labels.map(label => {
-        const dataPoint: any = { name: label };
-        // Create a value for each selected field, or fallback to generic values
-        if (campos_selecionados.length > 0) {
-           campos_selecionados.forEach((field: string, i: number) => {
-             // Try to make some fields numeric
-             if (field.toLowerCase().includes('valor') || field.toLowerCase().includes('total') || field.toLowerCase().includes('faturamento') || field.toLowerCase().includes('lucro')) {
-               dataPoint[field] = Math.floor(Math.random() * 50000) + 10000;
-             } else if (field.toLowerCase().includes('qtd') || field.toLowerCase().includes('volume') || field.toLowerCase().includes('quantidade')) {
-               dataPoint[field] = Math.floor(Math.random() * 500) + 50;
-             } else {
-               // Fallback numeric value for uncharted fields
-               dataPoint[`Metrica_${i+1}`] = Math.floor(Math.random() * 1000);
-             }
-           });
-        } else {
-          dataPoint.valor = Math.floor(Math.random() * 50000) + 10000;
-        }
-        return dataPoint;
-      });
+      const dimKey = dimensions[0]?.display_label || dimensions[0]?.field_name || 'name'
+      const labels =
+        nome_tabela.includes('Mensal') || nome_tabela.includes('DWBI') ? months : categories
 
+      chartData = labels.map((label) => {
+        const dataPoint: any = { [dimKey]: label, name: label }
+        if (metrics.length > 0) {
+          metrics.forEach((m: any) => {
+            const key = m.display_label || m.field_name
+            let baseVal = Math.floor(Math.random() * 50000) + 10000
+            // simulate aggregation variation
+            if (m.aggregation === 'count') baseVal = Math.floor(Math.random() * 500) + 50
+            else if (m.aggregation === 'avg') baseVal = Math.floor(Math.random() * 5000) + 1000
+            else if (m.aggregation === 'max') baseVal = Math.floor(Math.random() * 80000) + 40000
+            else if (m.aggregation === 'min') baseVal = Math.floor(Math.random() * 10000) + 1000
+
+            dataPoint[key] = baseVal
+          })
+        } else {
+          dataPoint.valor = Math.floor(Math.random() * 50000) + 10000
+        }
+        return dataPoint
+      })
     } else if (tipo_grafico === 'pie') {
-      // Proportional data
-      const fieldName = campos_selecionados[0] || 'Valor';
-      chartData = categories.slice(0, 4).map(cat => ({
+      const dimKey = dimensions[0]?.display_label || dimensions[0]?.field_name || 'name'
+      const metricKey = metrics[0]?.display_label || metrics[0]?.field_name || 'valor'
+
+      chartData = categories.slice(0, 5).map((cat) => ({
+        [dimKey]: cat,
         name: cat,
-        value: Math.floor(Math.random() * 100) + 10
-      }));
+        [metricKey]: Math.floor(Math.random() * 100) + 10,
+      }))
     } else if (tipo_grafico === 'scatter') {
-      // XY Data
+      const xKey = dimensions[0]?.display_label || dimensions[0]?.field_name || 'x'
+      const yKey = metrics[0]?.display_label || metrics[0]?.field_name || 'y'
+
       for (let i = 0; i < 20; i++) {
         chartData.push({
-          x: Math.floor(Math.random() * 1000),
-          y: Math.floor(Math.random() * 1000),
-          z: Math.floor(Math.random() * 100) + 20, // bubble size
-          name: `Ponto ${i}`
-        });
+          [xKey]: Math.floor(Math.random() * 1000),
+          [yKey]: Math.floor(Math.random() * 1000),
+          name: `Ponto ${i}`,
+        })
       }
     }
 
     return new Response(JSON.stringify({ success: true, data: chartData }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 200,
-    });
+    })
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 400,
-    });
+    })
   }
-});
+})
