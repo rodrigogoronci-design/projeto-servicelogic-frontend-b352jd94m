@@ -22,16 +22,27 @@ export default function Credentials() {
   useEffect(() => {
     const fetchCreds = async () => {
       if (!user) return
-      const { data } = await supabase
-        .from('credenciais_sistema_legado' as any)
-        .select('username, password')
-        .eq('user_id', user.id)
-        .single()
 
-      if (data) {
-        setFormData({ username: data.username, password: data.password })
+      try {
+        const { data, error } = await supabase
+          .from('credenciais_sistema_legado' as any)
+          .select('username, password')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error fetching credentials:', error)
+          return
+        }
+
+        if (data) {
+          setFormData({ username: data.username, password: data.password })
+        }
+      } catch (err) {
+        console.error('Failed to fetch credentials:', err)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
     fetchCreds()
   }, [user])
@@ -42,11 +53,13 @@ export default function Credentials() {
     setIsSubmitting(true)
 
     try {
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from('credenciais_sistema_legado' as any)
         .select('id')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
+
+      if (existingError) throw existingError
 
       let error
       if (existing) {

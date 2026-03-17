@@ -9,7 +9,186 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      configuracao_relatorios: {
+        Row: {
+          ativo: boolean | null
+          caminho_relatorio: string
+          created_at: string
+          frequencia_horas: number | null
+          id: string
+          nome_relatorio: string
+          parametros: Json | null
+          sistema_origem: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          caminho_relatorio: string
+          created_at?: string
+          frequencia_horas?: number | null
+          id?: string
+          nome_relatorio: string
+          parametros?: Json | null
+          sistema_origem?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          caminho_relatorio?: string
+          created_at?: string
+          frequencia_horas?: number | null
+          id?: string
+          nome_relatorio?: string
+          parametros?: Json | null
+          sistema_origem?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'configuracao_relatorios_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      credenciais_sistema_legado: {
+        Row: {
+          id: string
+          password: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          id?: string
+          password: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          id?: string
+          password?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'credenciais_sistema_legado_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      dados_importados: {
+        Row: {
+          data_importacao: string
+          error_details: string | null
+          id: string
+          payload: Json | null
+          registros: number | null
+          source: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          data_importacao?: string
+          error_details?: string | null
+          id?: string
+          payload?: Json | null
+          registros?: number | null
+          source?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          data_importacao?: string
+          error_details?: string | null
+          id?: string
+          payload?: Json | null
+          registros?: number | null
+          source?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'dados_importados_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      log_execucoes: {
+        Row: {
+          data_execucao: string
+          id: string
+          mensagem_erro: string | null
+          relatorio_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          data_execucao?: string
+          id?: string
+          mensagem_erro?: string | null
+          relatorio_id?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          data_execucao?: string
+          id?: string
+          mensagem_erro?: string | null
+          relatorio_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'log_execucoes_relatorio_id_fkey'
+            columns: ['relatorio_id']
+            isOneToOne: false
+            referencedRelation: 'configuracao_relatorios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'log_execucoes_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      usuarios: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -153,3 +332,84 @@ export const Constants = {
 // IMPORTANT: The TypeScript types above map UUID, TEXT, VARCHAR all to "string".
 // Use the COLUMN TYPES section below to know the real PostgreSQL type for each column.
 // Always use the correct PostgreSQL type when writing SQL migrations.
+
+// --- COLUMN TYPES (actual PostgreSQL types) ---
+// Use this to know the real database type when writing migrations.
+// "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: configuracao_relatorios
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   nome_relatorio: text (not null)
+//   sistema_origem: text (not null, default: 'Servicelogic'::text)
+//   caminho_relatorio: text (not null)
+//   parametros: jsonb (nullable, default: '{}'::jsonb)
+//   frequencia_horas: numeric (nullable, default: 24)
+//   ativo: boolean (nullable, default: true)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: credenciais_sistema_legado
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   username: text (not null)
+//   password: text (not null)
+//   updated_at: timestamp with time zone (not null, default: now())
+// Table: dados_importados
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   data_importacao: timestamp with time zone (not null, default: now())
+//   status: text (not null)
+//   registros: numeric (nullable, default: 0)
+//   source: text (nullable, default: 'Servicelogic'::text)
+//   error_details: text (nullable)
+//   payload: jsonb (nullable, default: '{}'::jsonb)
+// Table: log_execucoes
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   relatorio_id: uuid (nullable)
+//   data_execucao: timestamp with time zone (not null, default: now())
+//   status: text (not null)
+//   mensagem_erro: text (nullable)
+// Table: usuarios
+//   id: uuid (not null)
+//   nome: text (not null)
+//   email: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+
+// --- CONSTRAINTS ---
+// Table: configuracao_relatorios
+//   PRIMARY KEY configuracao_relatorios_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY configuracao_relatorios_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+// Table: credenciais_sistema_legado
+//   PRIMARY KEY credenciais_sistema_legado_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY credenciais_sistema_legado_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+// Table: dados_importados
+//   PRIMARY KEY dados_importados_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY dados_importados_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+// Table: log_execucoes
+//   PRIMARY KEY log_execucoes_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY log_execucoes_relatorio_id_fkey: FOREIGN KEY (relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE CASCADE
+//   FOREIGN KEY log_execucoes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+// Table: usuarios
+//   FOREIGN KEY usuarios_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   PRIMARY KEY usuarios_pkey: PRIMARY KEY (id)
+
+// --- ROW LEVEL SECURITY POLICIES ---
+// Table: configuracao_relatorios
+//   Policy "authenticated_all_conf" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: credenciais_sistema_legado
+//   Policy "authenticated_all_cred" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: dados_importados
+//   Policy "authenticated_all_dados" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: log_execucoes
+//   Policy "authenticated_all_log" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: usuarios
+//   Policy "authenticated_all_usuarios" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true

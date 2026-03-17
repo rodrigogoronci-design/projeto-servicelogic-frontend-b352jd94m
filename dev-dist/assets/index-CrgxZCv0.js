@@ -47485,12 +47485,21 @@ function Credentials() {
 	(0, import_react.useEffect)(() => {
 		const fetchCreds = async () => {
 			if (!user) return;
-			const { data } = await supabase.from("credenciais_sistema_legado").select("username, password").eq("user_id", user.id).single();
-			if (data) setFormData({
-				username: data.username,
-				password: data.password
-			});
-			setIsLoading(false);
+			try {
+				const { data, error } = await supabase.from("credenciais_sistema_legado").select("username, password").eq("user_id", user.id).maybeSingle();
+				if (error) {
+					console.error("Error fetching credentials:", error);
+					return;
+				}
+				if (data) setFormData({
+					username: data.username,
+					password: data.password
+				});
+			} catch (err) {
+				console.error("Failed to fetch credentials:", err);
+			} finally {
+				setIsLoading(false);
+			}
 		};
 		fetchCreds();
 	}, [user]);
@@ -47499,7 +47508,8 @@ function Credentials() {
 		if (!user) return;
 		setIsSubmitting(true);
 		try {
-			const { data: existing } = await supabase.from("credenciais_sistema_legado").select("id").eq("user_id", user.id).single();
+			const { data: existing, error: existingError } = await supabase.from("credenciais_sistema_legado").select("id").eq("user_id", user.id).maybeSingle();
+			if (existingError) throw existingError;
 			let error;
 			if (existing) {
 				const { error: updateError } = await supabase.from("credenciais_sistema_legado").update({
@@ -47532,68 +47542,68 @@ function Credentials() {
 		}
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/Settings/Credentials.tsx:87:5",
+		"data-uid": "src/pages/Settings/Credentials.tsx:100:5",
 		"data-prohibitions": "[editContent]",
 		className: "space-y-6 max-w-2xl",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/Settings/Credentials.tsx:88:7",
+			"data-uid": "src/pages/Settings/Credentials.tsx:101:7",
 			"data-prohibitions": "[]",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:89:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:102:9",
 				"data-prohibitions": "[]",
 				className: "text-2xl font-bold tracking-tight flex items-center gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:90:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:103:11",
 					"data-prohibitions": "[editContent]",
 					className: "size-6 text-sl-orange"
 				}), " Configurações de Credenciais"]
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:92:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:105:9",
 				"data-prohibitions": "[]",
 				className: "text-muted-foreground",
 				children: "Gerencie as credenciais utilizadas para acessar o sistema legado."
 			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
-			"data-uid": "src/pages/Settings/Credentials.tsx:97:7",
+			"data-uid": "src/pages/Settings/Credentials.tsx:110:7",
 			"data-prohibitions": "[editContent]",
 			className: "border-0 shadow-subtle bg-white",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:98:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:111:9",
 				"data-prohibitions": "[editContent]",
 				onSubmit: handleSubmit,
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:99:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:112:11",
 					"data-prohibitions": "[]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-						"data-uid": "src/pages/Settings/Credentials.tsx:100:13",
+						"data-uid": "src/pages/Settings/Credentials.tsx:113:13",
 						"data-prohibitions": "[]",
 						children: "Credenciais do Sistema Legado"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-						"data-uid": "src/pages/Settings/Credentials.tsx:101:13",
+						"data-uid": "src/pages/Settings/Credentials.tsx:114:13",
 						"data-prohibitions": "[]",
 						children: "Estes dados são utilizados pelas automações para extrair relatórios da base anterior."
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:105:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:118:11",
 					"data-prohibitions": "[editContent]",
 					className: "space-y-6",
 					children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						"data-uid": "src/pages/Settings/Credentials.tsx:107:15",
+						"data-uid": "src/pages/Settings/Credentials.tsx:120:15",
 						"data-prohibitions": "[]",
 						className: "h-24 flex items-center justify-center text-muted-foreground",
 						children: "Carregando..."
 					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:112:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:125:17",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:113:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:126:19",
 								"data-prohibitions": "[]",
 								htmlFor: "username",
 								children: "Usuário Legado"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:114:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:127:19",
 								"data-prohibitions": "[editContent]",
 								id: "username",
 								required: true,
@@ -47607,16 +47617,16 @@ function Credentials() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:124:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:137:17",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:125:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:138:19",
 								"data-prohibitions": "[]",
 								htmlFor: "password",
 								children: "Senha Legada"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:126:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:139:19",
 								"data-prohibitions": "[editContent]",
 								id: "password",
 								type: "password",
@@ -47631,17 +47641,17 @@ function Credentials() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:137:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:150:17",
 							"data-prohibitions": "[editContent]",
 							className: "pt-4 border-t flex justify-end",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:138:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:151:19",
 								"data-prohibitions": "[editContent]",
 								type: "submit",
 								disabled: isSubmitting,
 								className: "gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, {
-									"data-uid": "src/pages/Settings/Credentials.tsx:143:21",
+									"data-uid": "src/pages/Settings/Credentials.tsx:156:21",
 									"data-prohibitions": "[editContent]",
 									className: "size-4"
 								}), isSubmitting ? "Salvando..." : "Salvar Credenciais"]
@@ -47812,4 +47822,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-gbWi1isr.js.map
+//# sourceMappingURL=index-CrgxZCv0.js.map
