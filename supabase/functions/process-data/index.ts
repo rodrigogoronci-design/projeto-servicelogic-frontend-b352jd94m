@@ -11,13 +11,13 @@ Deno.serve(async (req: Request) => {
 
     // Simulate parsing the Excel data and preparing it for DB insertion
     const processedRows = 1250
-    const payload = { source_file: 'report.xlsx', sample: 'data' }
+    const dados = { source_file: 'report.xlsx', sample: 'data' }
 
     return new Response(
       JSON.stringify({
         success: true,
         processedRows,
-        payload,
+        dados,
         status: 'processado',
       }),
       {

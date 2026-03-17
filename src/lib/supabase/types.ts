@@ -92,6 +92,7 @@ export type Database = {
           id: string
           payload: Json | null
           registros: number | null
+          relatorio_id: string | null
           source: string | null
           status: string
           user_id: string
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           payload?: Json | null
           registros?: number | null
+          relatorio_id?: string | null
           source?: string | null
           status: string
           user_id: string
@@ -112,11 +114,19 @@ export type Database = {
           id?: string
           payload?: Json | null
           registros?: number | null
+          relatorio_id?: string | null
           source?: string | null
           status?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'dados_importados_relatorio_id_fkey'
+            columns: ['relatorio_id']
+            isOneToOne: false
+            referencedRelation: 'configuracao_relatorios'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'dados_importados_user_id_fkey'
             columns: ['user_id']
@@ -361,6 +371,7 @@ export const Constants = {
 //   source: text (nullable, default: 'Servicelogic'::text)
 //   error_details: text (nullable)
 //   payload: jsonb (nullable, default: '{}'::jsonb)
+//   relatorio_id: uuid (nullable)
 // Table: log_execucoes
 //   id: uuid (not null, default: gen_random_uuid())
 //   user_id: uuid (not null)
@@ -383,6 +394,7 @@ export const Constants = {
 //   FOREIGN KEY credenciais_sistema_legado_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 // Table: dados_importados
 //   PRIMARY KEY dados_importados_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY dados_importados_relatorio_id_fkey: FOREIGN KEY (relatorio_id) REFERENCES configuracao_relatorios(id) ON DELETE SET NULL
 //   FOREIGN KEY dados_importados_user_id_fkey: FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 // Table: log_execucoes
 //   PRIMARY KEY log_execucoes_pkey: PRIMARY KEY (id)
@@ -394,22 +406,22 @@ export const Constants = {
 
 // --- ROW LEVEL SECURITY POLICIES ---
 // Table: configuracao_relatorios
-//   Policy "authenticated_all_conf" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: true
-//     WITH CHECK: true
+//   Policy "authenticated_user_conf" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (user_id = auth.uid())
+//     WITH CHECK: (user_id = auth.uid())
 // Table: credenciais_sistema_legado
-//   Policy "authenticated_all_cred" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: true
-//     WITH CHECK: true
+//   Policy "authenticated_user_cred" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (user_id = auth.uid())
+//     WITH CHECK: (user_id = auth.uid())
 // Table: dados_importados
-//   Policy "authenticated_all_dados" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: true
-//     WITH CHECK: true
+//   Policy "authenticated_user_dados" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (user_id = auth.uid())
+//     WITH CHECK: (user_id = auth.uid())
 // Table: log_execucoes
-//   Policy "authenticated_all_log" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: true
-//     WITH CHECK: true
+//   Policy "authenticated_user_log" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (user_id = auth.uid())
+//     WITH CHECK: (user_id = auth.uid())
 // Table: usuarios
-//   Policy "authenticated_all_usuarios" (ALL, PERMISSIVE) roles={authenticated}
-//     USING: true
-//     WITH CHECK: true
+//   Policy "authenticated_user_usuarios" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (id = auth.uid())
+//     WITH CHECK: (id = auth.uid())

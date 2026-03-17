@@ -21,9 +21,9 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const { data: creds } = await supabase
-          .from('credenciais_sistema_legado' as any)
+          .from('credenciais_servicelogic' as any)
           .select('id')
-          .eq('user_id', user.id)
+          .eq('usuario_id', user.id)
           .maybeSingle()
 
         if (!creds) setMissingCreds(true)
@@ -32,17 +32,17 @@ export default function Dashboard() {
           supabase
             .from('configuracao_relatorios' as any)
             .select('id', { count: 'exact' })
-            .eq('user_id', user.id),
+            .eq('usuario_id', user.id),
           supabase
             .from('dados_importados' as any)
             .select('data_importacao')
-            .eq('user_id', user.id)
+            .eq('usuario_id', user.id)
             .order('data_importacao', { ascending: false })
             .limit(1),
           supabase
             .from('log_execucoes' as any)
             .select('status')
-            .eq('user_id', user.id)
+            .eq('usuario_id', user.id)
             .order('data_execucao', { ascending: false })
             .limit(1),
         ])

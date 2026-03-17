@@ -44938,12 +44938,12 @@ function Dashboard() {
 		if (!user) return;
 		const fetchDashboardData = async () => {
 			try {
-				const { data: creds } = await supabase.from("credenciais_sistema_legado").select("id").eq("user_id", user.id).maybeSingle();
+				const { data: creds } = await supabase.from("credenciais_servicelogic").select("id").eq("usuario_id", user.id).maybeSingle();
 				if (!creds) setMissingCreds(true);
 				const [reportsRes, importsRes, logsRes] = await Promise.all([
-					supabase.from("configuracao_relatorios").select("id", { count: "exact" }).eq("user_id", user.id),
-					supabase.from("dados_importados").select("data_importacao").eq("user_id", user.id).order("data_importacao", { ascending: false }).limit(1),
-					supabase.from("log_execucoes").select("status").eq("user_id", user.id).order("data_execucao", { ascending: false }).limit(1)
+					supabase.from("configuracao_relatorios").select("id", { count: "exact" }).eq("usuario_id", user.id),
+					supabase.from("dados_importados").select("data_importacao").eq("usuario_id", user.id).order("data_importacao", { ascending: false }).limit(1),
+					supabase.from("log_execucoes").select("status").eq("usuario_id", user.id).order("data_execucao", { ascending: false }).limit(1)
 				]);
 				setStats({
 					reportsCount: reportsRes.count || 0,
@@ -46357,7 +46357,7 @@ function ReportList() {
 	const fetchReports = async () => {
 		if (!user) return;
 		setLoading(true);
-		const { data, error } = await supabase.from("configuracao_relatorios").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+		const { data, error } = await supabase.from("configuracao_relatorios").select("*").eq("usuario_id", user.id).order("criado_em", { ascending: false });
 		if (!error && data) setReports(data);
 		setLoading(false);
 	};
@@ -46392,16 +46392,16 @@ function ReportList() {
 			} });
 			if (processRes.error) throw processRes.error;
 			await supabase.from("log_execucoes").insert({
-				user_id: user?.id,
-				relatorio_id: report.id,
+				usuario_id: user?.id,
+				configuracao_relatorio_id: report.id,
 				status: "sucesso"
 			});
 			await supabase.from("dados_importados").insert({
-				user_id: user?.id,
-				relatorio_id: report.id,
+				usuario_id: user?.id,
+				configuracao_relatorio_id: report.id,
 				status: processRes.data.status,
 				registros: processRes.data.processedRows,
-				payload: processRes.data.payload
+				dados: processRes.data.dados
 			});
 			toast({
 				title: "Sincronização Concluída",
@@ -46550,7 +46550,7 @@ function ReportList() {
 										"data-uid": "src/pages/Reports/ReportList.tsx:175:17",
 										"data-prohibitions": "[]",
 										className: "font-semibold text-slate-700",
-										children: "Parâmetros (Período)"
+										children: "Período"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TableHead, {
 										"data-uid": "src/pages/Reports/ReportList.tsx:176:17",
@@ -46610,7 +46610,7 @@ function ReportList() {
 										"data-uid": "src/pages/Reports/ReportList.tsx:200:21",
 										"data-prohibitions": "[editContent]",
 										className: "text-sm text-slate-600",
-										children: row.parametros?.dataInicial ? `${row.parametros.dataInicial} até ${row.parametros.dataFinal}` : "Não definido"
+										children: row.data_inicial ? `${row.data_inicial} até ${row.data_final}` : "Não definido"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TableCell, {
 										"data-uid": "src/pages/Reports/ReportList.tsx:205:21",
@@ -46870,20 +46870,20 @@ function NewReport() {
 	const [formData, setFormData] = (0, import_react.useState)({
 		nome_relatorio: "",
 		caminho_relatorio: "",
-		dataInicial: "",
-		dataFinal: "",
+		data_inicial: "",
+		data_final: "",
 		frequencia_horas: "24",
 		ativo: true
 	});
 	(0, import_react.useEffect)(() => {
 		if (id && user) {
 			const fetchReport = async () => {
-				const { data, error } = await supabase.from("configuracao_relatorios").select("*").eq("id", id).eq("user_id", user.id).single();
+				const { data, error } = await supabase.from("configuracao_relatorios").select("*").eq("id", id).eq("usuario_id", user.id).single();
 				if (data && !error) setFormData({
 					nome_relatorio: data.nome_relatorio,
 					caminho_relatorio: data.caminho_relatorio,
-					dataInicial: data.parametros?.dataInicial || "",
-					dataFinal: data.parametros?.dataFinal || "",
+					data_inicial: data.data_inicial || "",
+					data_final: data.data_final || "",
 					frequencia_horas: String(data.frequencia_horas || 24),
 					ativo: data.ativo ?? true
 				});
@@ -46894,7 +46894,7 @@ function NewReport() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!user) return;
-		if (!formData.nome_relatorio || !formData.caminho_relatorio || !formData.dataInicial || !formData.dataFinal) {
+		if (!formData.nome_relatorio || !formData.caminho_relatorio || !formData.data_inicial || !formData.data_final) {
 			toast({
 				title: "Campos obrigatórios",
 				description: "Preencha todos os campos obrigatórios.",
@@ -46905,16 +46905,15 @@ function NewReport() {
 		setIsSubmitting(true);
 		try {
 			const payload = {
-				user_id: user.id,
+				usuario_id: user.id,
 				nome_relatorio: formData.nome_relatorio,
 				sistema_origem: "Servicelogic",
 				caminho_relatorio: formData.caminho_relatorio,
-				parametros: {
-					dataInicial: formData.dataInicial,
-					dataFinal: formData.dataFinal
-				},
+				data_inicial: formData.data_inicial,
+				data_final: formData.data_final,
 				frequencia_horas: Number(formData.frequencia_horas),
-				ativo: formData.ativo
+				ativo: formData.ativo,
+				atualizado_em: (/* @__PURE__ */ new Date()).toISOString()
 			};
 			let error;
 			if (id) error = (await supabase.from("configuracao_relatorios").update(payload).eq("id", id)).error;
@@ -46933,82 +46932,82 @@ function NewReport() {
 		}
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/Reports/NewReport.tsx:115:5",
+		"data-uid": "src/pages/Reports/NewReport.tsx:117:5",
 		"data-prohibitions": "[editContent]",
 		className: "space-y-6 max-w-4xl",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/Reports/NewReport.tsx:116:7",
+			"data-uid": "src/pages/Reports/NewReport.tsx:118:7",
 			"data-prohibitions": "[editContent]",
 			className: "flex items-center gap-4",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-				"data-uid": "src/pages/Reports/NewReport.tsx:117:9",
+				"data-uid": "src/pages/Reports/NewReport.tsx:119:9",
 				"data-prohibitions": "[]",
 				variant: "ghost",
 				size: "icon",
 				onClick: () => navigate("/app/relatorios"),
 				className: "rounded-full",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowLeft, {
-					"data-uid": "src/pages/Reports/NewReport.tsx:123:11",
+					"data-uid": "src/pages/Reports/NewReport.tsx:125:11",
 					"data-prohibitions": "[editContent]",
 					className: "size-5 text-slate-500"
 				})
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/pages/Reports/NewReport.tsx:125:9",
+				"data-uid": "src/pages/Reports/NewReport.tsx:127:9",
 				"data-prohibitions": "[editContent]",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-					"data-uid": "src/pages/Reports/NewReport.tsx:126:11",
+					"data-uid": "src/pages/Reports/NewReport.tsx:128:11",
 					"data-prohibitions": "[editContent]",
 					className: "text-2xl font-bold tracking-tight",
 					children: id ? "Editar Relatório" : "Novo Relatório"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/pages/Reports/NewReport.tsx:129:11",
+					"data-uid": "src/pages/Reports/NewReport.tsx:131:11",
 					"data-prohibitions": "[]",
 					className: "text-slate-500",
 					children: "Configure as regras de extração do sistema legado."
 				})]
 			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
-			"data-uid": "src/pages/Reports/NewReport.tsx:133:7",
+			"data-uid": "src/pages/Reports/NewReport.tsx:135:7",
 			"data-prohibitions": "[editContent]",
 			className: "border-slate-200 shadow-sm bg-white",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				"data-uid": "src/pages/Reports/NewReport.tsx:134:9",
+				"data-uid": "src/pages/Reports/NewReport.tsx:136:9",
 				"data-prohibitions": "[editContent]",
 				onSubmit: handleSubmit,
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-					"data-uid": "src/pages/Reports/NewReport.tsx:135:11",
+					"data-uid": "src/pages/Reports/NewReport.tsx:137:11",
 					"data-prohibitions": "[]",
 					className: "border-b border-slate-100 bg-slate-50/50",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-						"data-uid": "src/pages/Reports/NewReport.tsx:136:13",
+						"data-uid": "src/pages/Reports/NewReport.tsx:138:13",
 						"data-prohibitions": "[]",
 						children: "Configuração Geral"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-						"data-uid": "src/pages/Reports/NewReport.tsx:137:13",
+						"data-uid": "src/pages/Reports/NewReport.tsx:139:13",
 						"data-prohibitions": "[]",
 						children: "Dados necessários para a integração da API externa."
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-					"data-uid": "src/pages/Reports/NewReport.tsx:139:11",
+					"data-uid": "src/pages/Reports/NewReport.tsx:141:11",
 					"data-prohibitions": "[editContent]",
 					className: "space-y-6 p-6",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Reports/NewReport.tsx:140:13",
+							"data-uid": "src/pages/Reports/NewReport.tsx:142:13",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Label$1, {
-								"data-uid": "src/pages/Reports/NewReport.tsx:141:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:143:15",
 								"data-prohibitions": "[]",
 								htmlFor: "nome",
 								children: ["Nome do Relatório ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/pages/Reports/NewReport.tsx:142:35",
+									"data-uid": "src/pages/Reports/NewReport.tsx:144:35",
 									"data-prohibitions": "[]",
 									className: "text-red-500",
 									children: "*"
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Reports/NewReport.tsx:144:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:146:15",
 								"data-prohibitions": "[editContent]",
 								id: "nome",
 								required: true,
@@ -47021,21 +47020,21 @@ function NewReport() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Reports/NewReport.tsx:153:13",
+							"data-uid": "src/pages/Reports/NewReport.tsx:155:13",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Label$1, {
-								"data-uid": "src/pages/Reports/NewReport.tsx:154:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:156:15",
 								"data-prohibitions": "[]",
 								htmlFor: "caminho",
 								children: ["Caminho do Relatório (Endpoint) ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									"data-uid": "src/pages/Reports/NewReport.tsx:155:49",
+									"data-uid": "src/pages/Reports/NewReport.tsx:157:49",
 									"data-prohibitions": "[]",
 									className: "text-red-500",
 									children: "*"
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Reports/NewReport.tsx:157:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:159:15",
 								"data-prohibitions": "[editContent]",
 								id: "caminho",
 								required: true,
@@ -47049,78 +47048,78 @@ function NewReport() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Reports/NewReport.tsx:167:13",
+							"data-uid": "src/pages/Reports/NewReport.tsx:169:13",
 							"data-prohibitions": "[]",
 							className: "grid grid-cols-1 md:grid-cols-2 gap-6",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/Reports/NewReport.tsx:168:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:170:15",
 								"data-prohibitions": "[]",
 								className: "space-y-2",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Label$1, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:169:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:171:17",
 									"data-prohibitions": "[]",
-									htmlFor: "dataInicial",
+									htmlFor: "data_inicial",
 									children: ["Data Inicial ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/Reports/NewReport.tsx:170:32",
+										"data-uid": "src/pages/Reports/NewReport.tsx:172:32",
 										"data-prohibitions": "[]",
 										className: "text-red-500",
 										children: "*"
 									})]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:172:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:174:17",
 									"data-prohibitions": "[editContent]",
-									id: "dataInicial",
+									id: "data_inicial",
 									type: "date",
 									required: true,
-									value: formData.dataInicial,
+									value: formData.data_inicial,
 									onChange: (e) => setFormData({
 										...formData,
-										dataInicial: e.target.value
+										data_inicial: e.target.value
 									})
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/Reports/NewReport.tsx:180:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:182:15",
 								"data-prohibitions": "[]",
 								className: "space-y-2",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Label$1, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:181:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:183:17",
 									"data-prohibitions": "[]",
-									htmlFor: "dataFinal",
+									htmlFor: "data_final",
 									children: ["Data Final ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/pages/Reports/NewReport.tsx:182:30",
+										"data-uid": "src/pages/Reports/NewReport.tsx:184:30",
 										"data-prohibitions": "[]",
 										className: "text-red-500",
 										children: "*"
 									})]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:184:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:186:17",
 									"data-prohibitions": "[editContent]",
-									id: "dataFinal",
+									id: "data_final",
 									type: "date",
 									required: true,
-									value: formData.dataFinal,
+									value: formData.data_final,
 									onChange: (e) => setFormData({
 										...formData,
-										dataFinal: e.target.value
+										data_final: e.target.value
 									})
 								})]
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Reports/NewReport.tsx:194:13",
+							"data-uid": "src/pages/Reports/NewReport.tsx:196:13",
 							"data-prohibitions": "[editContent]",
 							className: "grid grid-cols-1 md:grid-cols-2 gap-6 items-center border-t border-slate-100 pt-6",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/Reports/NewReport.tsx:195:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:197:15",
 								"data-prohibitions": "[]",
 								className: "space-y-2",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:196:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:198:17",
 									"data-prohibitions": "[]",
 									htmlFor: "frequencia",
 									children: "Frequência de Execução (Horas)"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:197:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:199:17",
 									"data-prohibitions": "[editContent]",
 									id: "frequencia",
 									type: "number",
@@ -47134,11 +47133,11 @@ function NewReport() {
 									})
 								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/Reports/NewReport.tsx:208:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:210:15",
 								"data-prohibitions": "[editContent]",
 								className: "flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200 mt-2 md:mt-0",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:209:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:211:17",
 									"data-prohibitions": "[editContent]",
 									id: "ativo",
 									checked: formData.ativo,
@@ -47148,17 +47147,17 @@ function NewReport() {
 									}),
 									className: "data-[state=checked]:bg-sl-orange"
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									"data-uid": "src/pages/Reports/NewReport.tsx:215:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:217:17",
 									"data-prohibitions": "[editContent]",
 									className: "space-y-0.5",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-										"data-uid": "src/pages/Reports/NewReport.tsx:216:19",
+										"data-uid": "src/pages/Reports/NewReport.tsx:218:19",
 										"data-prohibitions": "[]",
 										htmlFor: "ativo",
 										className: "text-base cursor-pointer font-medium text-slate-800",
 										children: "Status da Automação"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-										"data-uid": "src/pages/Reports/NewReport.tsx:222:19",
+										"data-uid": "src/pages/Reports/NewReport.tsx:224:19",
 										"data-prohibitions": "[editContent]",
 										className: "text-xs text-slate-500",
 										children: formData.ativo ? "Automação ativada e operante" : "Automação pausada"
@@ -47167,17 +47166,17 @@ function NewReport() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/Reports/NewReport.tsx:229:13",
+							"data-uid": "src/pages/Reports/NewReport.tsx:231:13",
 							"data-prohibitions": "[editContent]",
 							className: "pt-4 flex justify-end",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/Reports/NewReport.tsx:230:15",
+								"data-uid": "src/pages/Reports/NewReport.tsx:232:15",
 								"data-prohibitions": "[editContent]",
 								type: "submit",
 								disabled: isSubmitting,
 								className: "gap-2 bg-gradient-to-r from-sl-orange to-sl-blue text-white btn-scale shadow-md h-11 px-6",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, {
-									"data-uid": "src/pages/Reports/NewReport.tsx:235:17",
+									"data-uid": "src/pages/Reports/NewReport.tsx:237:17",
 									"data-prohibitions": "[editContent]",
 									className: "size-4"
 								}), isSubmitting ? "Salvando..." : "Salvar Configuração"]
@@ -47206,7 +47205,7 @@ function ImportedData() {
 		const { data: records, error } = await supabase.from("dados_importados").select(`
         *,
         configuracao_relatorios (nome_relatorio)
-      `).eq("user_id", user.id).order("data_importacao", { ascending: false });
+      `).eq("usuario_id", user.id).order("data_importacao", { ascending: false });
 		if (!error && records) setData(records);
 		setLoading(false);
 	};
@@ -47513,7 +47512,7 @@ function DataDetails() {
 	(0, import_react.useEffect)(() => {
 		if (id && user) {
 			const fetchDetails = async () => {
-				const { data, error } = await supabase.from("dados_importados").select("*, configuracao_relatorios(nome_relatorio)").eq("id", id).eq("user_id", user.id).single();
+				const { data, error } = await supabase.from("dados_importados").select("*, configuracao_relatorios(nome_relatorio)").eq("id", id).eq("usuario_id", user.id).single();
 				if (data && !error) setRecord(data);
 				setLoading(false);
 			};
@@ -47572,7 +47571,7 @@ function DataDetails() {
 			})
 		]
 	});
-	const payloadData = record.payload || {};
+	const payloadData = record.dados || {};
 	const payloadKeys = Object.keys(payloadData);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		"data-uid": "src/pages/Data/DataDetails.tsx:85:5",
@@ -47825,20 +47824,20 @@ function Credentials() {
 	const [isLoading, setIsLoading] = (0, import_react.useState)(true);
 	const [formData, setFormData] = (0, import_react.useState)({
 		username: "",
-		password: ""
+		password_encrypted: ""
 	});
 	(0, import_react.useEffect)(() => {
 		const fetchCreds = async () => {
 			if (!user) return;
 			try {
-				const { data, error } = await supabase.from("credenciais_sistema_legado").select("username, password").eq("user_id", user.id).maybeSingle();
+				const { data, error } = await supabase.from("credenciais_servicelogic").select("username, password_encrypted").eq("usuario_id", user.id).maybeSingle();
 				if (error) {
 					console.error("Error fetching credentials:", error);
 					return;
 				}
 				if (data) setFormData({
 					username: data.username,
-					password: data.password
+					password_encrypted: data.password_encrypted
 				});
 			} catch (err) {
 				console.error("Failed to fetch credentials:", err);
@@ -47853,21 +47852,21 @@ function Credentials() {
 		if (!user) return;
 		setIsSubmitting(true);
 		try {
-			const { data: existing, error: existingError } = await supabase.from("credenciais_sistema_legado").select("id").eq("user_id", user.id).maybeSingle();
+			const { data: existing, error: existingError } = await supabase.from("credenciais_servicelogic").select("id").eq("usuario_id", user.id).maybeSingle();
 			if (existingError) throw existingError;
 			let error;
 			if (existing) {
-				const { error: updateError } = await supabase.from("credenciais_sistema_legado").update({
+				const { error: updateError } = await supabase.from("credenciais_servicelogic").update({
 					username: formData.username,
-					password: formData.password,
-					updated_at: (/* @__PURE__ */ new Date()).toISOString()
+					password_encrypted: formData.password_encrypted,
+					atualizado_em: (/* @__PURE__ */ new Date()).toISOString()
 				}).eq("id", existing.id);
 				error = updateError;
 			} else {
-				const { error: insertError } = await supabase.from("credenciais_sistema_legado").insert({
-					user_id: user.id,
+				const { error: insertError } = await supabase.from("credenciais_servicelogic").insert({
+					usuario_id: user.id,
 					username: formData.username,
-					password: formData.password
+					password_encrypted: formData.password_encrypted
 				});
 				error = insertError;
 			}
@@ -47887,68 +47886,68 @@ function Credentials() {
 		}
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/Settings/Credentials.tsx:100:5",
+		"data-uid": "src/pages/Settings/Credentials.tsx:104:5",
 		"data-prohibitions": "[editContent]",
 		className: "space-y-6 max-w-2xl",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/Settings/Credentials.tsx:101:7",
+			"data-uid": "src/pages/Settings/Credentials.tsx:105:7",
 			"data-prohibitions": "[]",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:102:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:106:9",
 				"data-prohibitions": "[]",
 				className: "text-2xl font-bold tracking-tight flex items-center gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:103:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:107:11",
 					"data-prohibitions": "[editContent]",
 					className: "size-6 text-sl-orange"
 				}), " Configurações de Credenciais"]
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:105:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:109:9",
 				"data-prohibitions": "[]",
 				className: "text-muted-foreground",
 				children: "Gerencie as credenciais utilizadas para acessar o sistema legado."
 			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
-			"data-uid": "src/pages/Settings/Credentials.tsx:110:7",
+			"data-uid": "src/pages/Settings/Credentials.tsx:114:7",
 			"data-prohibitions": "[editContent]",
 			className: "border-0 shadow-subtle bg-white",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				"data-uid": "src/pages/Settings/Credentials.tsx:111:9",
+				"data-uid": "src/pages/Settings/Credentials.tsx:115:9",
 				"data-prohibitions": "[editContent]",
 				onSubmit: handleSubmit,
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:112:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:116:11",
 					"data-prohibitions": "[]",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-						"data-uid": "src/pages/Settings/Credentials.tsx:113:13",
+						"data-uid": "src/pages/Settings/Credentials.tsx:117:13",
 						"data-prohibitions": "[]",
 						children: "Credenciais do Sistema Legado"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-						"data-uid": "src/pages/Settings/Credentials.tsx:114:13",
+						"data-uid": "src/pages/Settings/Credentials.tsx:118:13",
 						"data-prohibitions": "[]",
 						children: "Estes dados são utilizados pelas automações para extrair relatórios da base anterior."
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-					"data-uid": "src/pages/Settings/Credentials.tsx:118:11",
+					"data-uid": "src/pages/Settings/Credentials.tsx:122:11",
 					"data-prohibitions": "[editContent]",
 					className: "space-y-6",
 					children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						"data-uid": "src/pages/Settings/Credentials.tsx:120:15",
+						"data-uid": "src/pages/Settings/Credentials.tsx:124:15",
 						"data-prohibitions": "[]",
 						className: "h-24 flex items-center justify-center text-muted-foreground",
 						children: "Carregando..."
 					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:125:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:129:17",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:126:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:130:19",
 								"data-prohibitions": "[]",
 								htmlFor: "username",
 								children: "Usuário Legado"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:127:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:131:19",
 								"data-prohibitions": "[editContent]",
 								id: "username",
 								required: true,
@@ -47962,41 +47961,41 @@ function Credentials() {
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:137:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:141:17",
 							"data-prohibitions": "[]",
 							className: "space-y-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:138:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:142:19",
 								"data-prohibitions": "[]",
-								htmlFor: "password",
+								htmlFor: "password_encrypted",
 								children: "Senha Legada"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:139:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:143:19",
 								"data-prohibitions": "[editContent]",
-								id: "password",
+								id: "password_encrypted",
 								type: "password",
 								required: true,
 								placeholder: "••••••••",
-								value: formData.password,
+								value: formData.password_encrypted,
 								onChange: (e) => setFormData({
 									...formData,
-									password: e.target.value
+									password_encrypted: e.target.value
 								}),
 								className: "focus-visible:ring-sl-orange"
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/Settings/Credentials.tsx:150:17",
+							"data-uid": "src/pages/Settings/Credentials.tsx:156:17",
 							"data-prohibitions": "[editContent]",
 							className: "pt-4 border-t flex justify-end",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-								"data-uid": "src/pages/Settings/Credentials.tsx:151:19",
+								"data-uid": "src/pages/Settings/Credentials.tsx:157:19",
 								"data-prohibitions": "[editContent]",
 								type: "submit",
 								disabled: isSubmitting,
 								className: "gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, {
-									"data-uid": "src/pages/Settings/Credentials.tsx:156:21",
+									"data-uid": "src/pages/Settings/Credentials.tsx:162:21",
 									"data-prohibitions": "[editContent]",
 									className: "size-4"
 								}), isSubmitting ? "Salvando..." : "Salvar Credenciais"]
@@ -48185,4 +48184,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-NOuyXkg9.js.map
+//# sourceMappingURL=index-B7k_QDiB.js.map

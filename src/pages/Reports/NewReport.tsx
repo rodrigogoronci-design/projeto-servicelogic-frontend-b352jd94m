@@ -20,8 +20,8 @@ export default function NewReport() {
   const [formData, setFormData] = useState({
     nome_relatorio: '',
     caminho_relatorio: '',
-    dataInicial: '',
-    dataFinal: '',
+    data_inicial: '',
+    data_final: '',
     frequencia_horas: '24',
     ativo: true,
   })
@@ -33,15 +33,15 @@ export default function NewReport() {
           .from('configuracao_relatorios' as any)
           .select('*')
           .eq('id', id)
-          .eq('user_id', user.id)
+          .eq('usuario_id', user.id)
           .single()
 
         if (data && !error) {
           setFormData({
             nome_relatorio: data.nome_relatorio,
             caminho_relatorio: data.caminho_relatorio,
-            dataInicial: data.parametros?.dataInicial || '',
-            dataFinal: data.parametros?.dataFinal || '',
+            data_inicial: data.data_inicial || '',
+            data_final: data.data_final || '',
             frequencia_horas: String(data.frequencia_horas || 24),
             ativo: data.ativo ?? true,
           })
@@ -58,8 +58,8 @@ export default function NewReport() {
     if (
       !formData.nome_relatorio ||
       !formData.caminho_relatorio ||
-      !formData.dataInicial ||
-      !formData.dataFinal
+      !formData.data_inicial ||
+      !formData.data_final
     ) {
       toast({
         title: 'Campos obrigatórios',
@@ -73,13 +73,15 @@ export default function NewReport() {
 
     try {
       const payload = {
-        user_id: user.id,
+        usuario_id: user.id,
         nome_relatorio: formData.nome_relatorio,
         sistema_origem: 'Servicelogic',
         caminho_relatorio: formData.caminho_relatorio,
-        parametros: { dataInicial: formData.dataInicial, dataFinal: formData.dataFinal },
+        data_inicial: formData.data_inicial,
+        data_final: formData.data_final,
         frequencia_horas: Number(formData.frequencia_horas),
         ativo: formData.ativo,
+        atualizado_em: new Date().toISOString(),
       }
 
       let error
@@ -166,27 +168,27 @@ export default function NewReport() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="dataInicial">
+                <Label htmlFor="data_inicial">
                   Data Inicial <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="dataInicial"
+                  id="data_inicial"
                   type="date"
                   required
-                  value={formData.dataInicial}
-                  onChange={(e) => setFormData({ ...formData, dataInicial: e.target.value })}
+                  value={formData.data_inicial}
+                  onChange={(e) => setFormData({ ...formData, data_inicial: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dataFinal">
+                <Label htmlFor="data_final">
                   Data Final <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="dataFinal"
+                  id="data_final"
                   type="date"
                   required
-                  value={formData.dataFinal}
-                  onChange={(e) => setFormData({ ...formData, dataFinal: e.target.value })}
+                  value={formData.data_final}
+                  onChange={(e) => setFormData({ ...formData, data_final: e.target.value })}
                 />
               </div>
             </div>

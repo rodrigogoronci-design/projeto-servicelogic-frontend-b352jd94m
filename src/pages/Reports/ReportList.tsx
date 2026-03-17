@@ -42,8 +42,8 @@ export default function ReportList() {
     const { data, error } = await supabase
       .from('configuracao_relatorios' as any)
       .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+      .eq('usuario_id', user.id)
+      .order('criado_em', { ascending: false })
 
     if (!error && data) {
       setReports(data)
@@ -90,17 +90,17 @@ export default function ReportList() {
       if (processRes.error) throw processRes.error
 
       await supabase.from('log_execucoes' as any).insert({
-        user_id: user?.id,
-        relatorio_id: report.id,
+        usuario_id: user?.id,
+        configuracao_relatorio_id: report.id,
         status: 'sucesso',
       })
 
       await supabase.from('dados_importados' as any).insert({
-        user_id: user?.id,
-        relatorio_id: report.id,
+        usuario_id: user?.id,
+        configuracao_relatorio_id: report.id,
         status: processRes.data.status,
         registros: processRes.data.processedRows,
-        payload: processRes.data.payload,
+        dados: processRes.data.dados,
       })
 
       toast({
@@ -172,7 +172,7 @@ export default function ReportList() {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="font-semibold text-slate-700">Nome do Relatório</TableHead>
-                <TableHead className="font-semibold text-slate-700">Parâmetros (Período)</TableHead>
+                <TableHead className="font-semibold text-slate-700">Período</TableHead>
                 <TableHead className="font-semibold text-slate-700">Frequência</TableHead>
                 <TableHead className="font-semibold text-slate-700">Status</TableHead>
                 <TableHead className="font-semibold text-slate-700 text-right">Ações</TableHead>
@@ -198,8 +198,8 @@ export default function ReportList() {
                       {row.nome_relatorio}
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">
-                      {row.parametros?.dataInicial
-                        ? `${row.parametros.dataInicial} até ${row.parametros.dataFinal}`
+                      {row.data_inicial
+                        ? `${row.data_inicial} até ${row.data_final}`
                         : 'Não definido'}
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">

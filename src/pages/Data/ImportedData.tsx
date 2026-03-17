@@ -45,7 +45,7 @@ export default function ImportedData() {
         *,
         configuracao_relatorios (nome_relatorio)
       `)
-      .eq('user_id', user.id)
+      .eq('usuario_id', user.id)
       .order('data_importacao', { ascending: false })
 
     if (!error && records) {

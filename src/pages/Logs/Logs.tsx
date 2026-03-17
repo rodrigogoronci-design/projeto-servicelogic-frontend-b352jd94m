@@ -13,13 +13,16 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, CheckCircle2, Activity } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Logs() {
+  const { user } = useAuth()
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchLogs = async () => {
+      if (!user) return
       setLoading(true)
       const { data, error } = await supabase
         .from('log_execucoes' as any)
@@ -27,6 +30,7 @@ export default function Logs() {
           id, data_execucao, status, mensagem_erro,
           configuracao_relatorios (nome_relatorio)
         `)
+        .eq('usuario_id', user.id)
         .order('data_execucao', { ascending: false })
 
       if (!error && data) {
@@ -36,7 +40,7 @@ export default function Logs() {
     }
 
     fetchLogs()
-  }, [])
+  }, [user])
 
   return (
     <div className="space-y-6">

@@ -25,7 +25,7 @@ export default function DataDetails() {
           .from('dados_importados' as any)
           .select('*, configuracao_relatorios(nome_relatorio)')
           .eq('id', id)
-          .eq('user_id', user.id)
+          .eq('usuario_id', user.id)
           .single()
 
         if (data && !error) setRecord(data)
@@ -78,7 +78,7 @@ export default function DataDetails() {
     )
   }
 
-  const payloadData = record.payload || {}
+  const payloadData = record.dados || {}
   const payloadKeys = Object.keys(payloadData)
 
   return (

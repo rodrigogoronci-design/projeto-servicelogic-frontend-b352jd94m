@@ -16,7 +16,7 @@ export default function Credentials() {
 
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
+    password_encrypted: '',
   })
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export default function Credentials() {
 
       try {
         const { data, error } = await supabase
-          .from('credenciais_sistema_legado' as any)
-          .select('username, password')
-          .eq('user_id', user.id)
+          .from('credenciais_servicelogic' as any)
+          .select('username, password_encrypted')
+          .eq('usuario_id', user.id)
           .maybeSingle()
 
         if (error) {
@@ -36,7 +36,7 @@ export default function Credentials() {
         }
 
         if (data) {
-          setFormData({ username: data.username, password: data.password })
+          setFormData({ username: data.username, password_encrypted: data.password_encrypted })
         }
       } catch (err) {
         console.error('Failed to fetch credentials:', err)
@@ -54,9 +54,9 @@ export default function Credentials() {
 
     try {
       const { data: existing, error: existingError } = await supabase
-        .from('credenciais_sistema_legado' as any)
+        .from('credenciais_servicelogic' as any)
         .select('id')
-        .eq('user_id', user.id)
+        .eq('usuario_id', user.id)
         .maybeSingle()
 
       if (existingError) throw existingError
@@ -64,18 +64,22 @@ export default function Credentials() {
       let error
       if (existing) {
         const { error: updateError } = await supabase
-          .from('credenciais_sistema_legado' as any)
+          .from('credenciais_servicelogic' as any)
           .update({
             username: formData.username,
-            password: formData.password,
-            updated_at: new Date().toISOString(),
+            password_encrypted: formData.password_encrypted,
+            atualizado_em: new Date().toISOString(),
           })
           .eq('id', existing.id)
         error = updateError
       } else {
         const { error: insertError } = await supabase
-          .from('credenciais_sistema_legado' as any)
-          .insert({ user_id: user.id, username: formData.username, password: formData.password })
+          .from('credenciais_servicelogic' as any)
+          .insert({
+            usuario_id: user.id,
+            username: formData.username,
+            password_encrypted: formData.password_encrypted,
+          })
         error = insertError
       }
 
@@ -135,14 +139,16 @@ export default function Credentials() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Senha Legada</Label>
+                  <Label htmlFor="password_encrypted">Senha Legada</Label>
                   <Input
-                    id="password"
+                    id="password_encrypted"
                     type="password"
                     required
                     placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    value={formData.password_encrypted}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password_encrypted: e.target.value })
+                    }
                     className="focus-visible:ring-sl-orange"
                   />
                 </div>
