@@ -44,8 +44,8 @@ export default function ChartForm() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in-up pb-12">
-      <div className="flex items-center gap-4">
+    <div className="max-w-[1400px] mx-auto space-y-6 animate-fade-in-up pb-12">
+      <div className="flex items-center gap-4 mb-8">
         <Button
           variant="ghost"
           size="icon"
@@ -61,137 +61,131 @@ export default function ChartForm() {
             {id ? 'Editar Gráfico' : 'Novo Gráfico'}
           </h2>
           <p className="text-slate-500 mt-1">
-            Configure os dados, formato visual e campos de exibição.
+            Configure os dados, formato visual e campos de exibição em uma interface aprimorada.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 space-y-6">
-          <Card className="border-t-4 border-t-sl-orange shadow-md">
-            <CardHeader className="pb-4">
-              <CardTitle>Detalhes da Origem</CardTitle>
-              <CardDescription>Defina os dados base e o tipo de visualização.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="nome_grafico">
-                    Nome do Gráfico <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="nome_grafico"
-                    required
-                    placeholder="Ex: Faturamento Mensal"
-                    value={formData.nome_grafico}
-                    onChange={(e) => setFormData({ ...formData, nome_grafico: e.target.value })}
-                    className="bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nome_tabela">
-                    Tabela Origem <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.nome_tabela}
-                    onValueChange={(val) =>
-                      setFormData({ ...formData, nome_tabela: val, campos_selecionados: [] })
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-50 focus:bg-white transition-colors">
-                      <SelectValue placeholder="Selecione uma tabela" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                      {tables.length === 0 && (
-                        <div className="p-2 text-sm text-slate-500 text-center">
-                          Buscando tabelas...
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label>
-                  Tipo de Gráfico <span className="text-red-500">*</span>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <Card className="border-t-4 border-t-sl-orange shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle>Detalhes da Origem</CardTitle>
+            <CardDescription>Defina os dados base e o tipo de visualização.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="nome_grafico">
+                  Nome do Gráfico <span className="text-red-500">*</span>
                 </Label>
-                <ChartTypeSelector
-                  value={formData.tipo_grafico}
-                  onChange={(v) => setFormData({ ...formData, tipo_grafico: v })}
+                <Input
+                  id="nome_grafico"
+                  required
+                  placeholder="Ex: Faturamento Mensal"
+                  value={formData.nome_grafico}
+                  onChange={(e) => setFormData({ ...formData, nome_grafico: e.target.value })}
+                  className="bg-slate-50 focus:bg-white transition-colors focus-visible:ring-sl-blue"
                 />
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  {userEditedDesc && (
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs text-sl-blue"
-                      onClick={() => {
-                        setUserEditedDesc(false)
-                        setFormData((prev) => ({ ...prev, descricao: generatedDescription }))
-                      }}
-                    >
-                      Restaurar Auto-gerada
-                    </Button>
-                  )}
-                </div>
-                <Textarea
-                  id="descricao"
-                  placeholder="Descreva o propósito deste gráfico..."
-                  value={formData.descricao}
-                  onChange={(e) => {
-                    setFormData({ ...formData, descricao: e.target.value })
-                    setUserEditedDesc(true)
-                  }}
-                  className="bg-slate-50 focus:bg-white transition-colors resize-none"
-                  rows={2}
-                />
+                <Label htmlFor="nome_tabela">
+                  Tabela Origem <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.nome_tabela}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, nome_tabela: val, campos_selecionados: [] })
+                  }
+                >
+                  <SelectTrigger className="bg-slate-50 focus:bg-white transition-colors focus:ring-sl-blue">
+                    <SelectValue placeholder="Selecione uma tabela" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                    {tables.length === 0 && (
+                      <div className="p-2 text-sm text-slate-500 text-center">
+                        Buscando tabelas...
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card className="shadow-md">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <Label className="text-lg">Configuração de Campos</Label>
-                {loadingSchema && <Loader2 className="size-4 animate-spin text-slate-400" />}
+            <div className="space-y-3 pt-2">
+              <Label>
+                Tipo de Gráfico <span className="text-red-500">*</span>
+              </Label>
+              <ChartTypeSelector
+                value={formData.tipo_grafico}
+                onChange={(v) => setFormData({ ...formData, tipo_grafico: v })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="descricao">Descrição</Label>
+                {userEditedDesc && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-sl-blue"
+                    onClick={() => {
+                      setUserEditedDesc(false)
+                      setFormData((prev) => ({ ...prev, descricao: generatedDescription }))
+                    }}
+                  >
+                    Restaurar Auto-gerada
+                  </Button>
+                )}
               </div>
-              <ChartFieldsSetup columns={columns} formData={formData} setFormData={setFormData} />
-            </CardContent>
-          </Card>
-        </div>
+              <Textarea
+                id="descricao"
+                placeholder="Descreva o propósito deste gráfico..."
+                value={formData.descricao}
+                onChange={(e) => {
+                  setFormData({ ...formData, descricao: e.target.value })
+                  setUserEditedDesc(true)
+                }}
+                className="bg-slate-50 focus:bg-white transition-colors resize-none focus-visible:ring-sl-blue"
+                rows={2}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="lg:col-span-5 space-y-6">
-          <div className="sticky top-6">
-            <Card className="shadow-md">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center justify-between">
-                  Prévia do Gráfico
-                  {formData.campos_selecionados.length > 0 && (
-                    <span className="flex h-3 w-3 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartLivePreview formData={formData} />
-              </CardContent>
-            </Card>
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-6">
+              <Label className="text-lg font-semibold text-slate-800">Campos do Gráfico</Label>
+              {loadingSchema && <Loader2 className="size-5 animate-spin text-slate-400" />}
+            </div>
+            <ChartFieldsSetup columns={columns} formData={formData} setFormData={setFormData} />
+          </CardContent>
+        </Card>
 
-            <div className="mt-6 flex justify-end gap-3">
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
+            <CardTitle className="flex items-center justify-between text-lg">
+              Prévia do Gráfico
+              {formData.campos_selecionados.length > 0 && (
+                <span className="flex h-3 w-3 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <ChartLivePreview formData={formData} />
+
+            <div className="mt-8 flex justify-end gap-4 border-t border-slate-100 pt-6">
               <Button
                 type="button"
                 variant="outline"
@@ -213,8 +207,8 @@ export default function ChartForm() {
                 Salvar Gráfico
               </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </form>
     </div>
   )

@@ -17,12 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Settings, LogOut, Activity, BarChart3, PieChart } from 'lucide-react'
+import { Settings, LogOut, Activity, BarChart3, PieChart, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard SQL', href: '/app', icon: BarChart3, exact: true },
+  { name: 'Meus Dashboards', href: '/app/dashboards', icon: LayoutDashboard, exact: false },
   { name: 'Meus Gráficos', href: '/app/graficos', icon: PieChart, exact: false },
   { name: 'Logs & Monitoramento', href: '/app/logs', icon: Activity, exact: false },
   { name: 'Configurações', href: '/app/credenciais', icon: Settings, exact: false },

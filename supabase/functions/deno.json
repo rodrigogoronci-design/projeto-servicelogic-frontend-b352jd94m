@@ -1,12 +1,13 @@
 {
   "_versions": {
-    "auth-servicelogic": 1,
+    "auth-servicelogic": 2,
     "scrape-servicelogic": 1,
     "process-excel": 1,
-    "schedule-imports": 1
-  }
-}
-test-sql-connection": 1,
-    "fetch-sql-data": 1
+    "schedule-imports": 1,
+    "test-sql-connection": 1,
+    "fetch-sql-data": 3,
+    "get-sql-tables": 1,
+    "get-chart-preview": 4,
+    "functions": 1
   }
 }

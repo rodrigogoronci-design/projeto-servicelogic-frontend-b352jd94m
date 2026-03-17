@@ -11,6 +11,9 @@ import Credentials from './pages/Settings/Credentials'
 import ExecutionLogs from './pages/Logs/ExecutionLogs'
 import ChartList from './pages/Charts/ChartList'
 import ChartForm from './pages/Charts/ChartForm'
+import DashboardList from './pages/Dashboards/DashboardList'
+import DashboardForm from './pages/Dashboards/DashboardForm'
+import DashboardViewer from './pages/Dashboards/DashboardViewer'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -31,9 +34,16 @@ const App = () => (
             }
           >
             <Route index element={<DashboardSQL />} />
+
+            <Route path="dashboards" element={<DashboardList />} />
+            <Route path="dashboards/novo" element={<DashboardForm />} />
+            <Route path="dashboards/:id/editar" element={<DashboardForm />} />
+            <Route path="dashboards/:id" element={<DashboardViewer />} />
+
             <Route path="graficos" element={<ChartList />} />
             <Route path="graficos/novo" element={<ChartForm />} />
             <Route path="graficos/:id" element={<ChartForm />} />
+
             <Route path="credenciais" element={<Credentials />} />
             <Route path="logs" element={<ExecutionLogs />} />
           </Route>

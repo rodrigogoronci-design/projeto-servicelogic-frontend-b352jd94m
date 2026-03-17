@@ -31,6 +31,7 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
       aggregation: isNumeric ? 'sum' : undefined,
       display_label: colName,
       color: isNumeric ? '#0066CC' : '#FF8C00',
+      is_filter: false,
     }
 
     setFormData((prev: ChartFormData) => ({
@@ -72,22 +73,22 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
   }
 
   return (
-    <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
         <div>
           <h3 className="font-semibold text-slate-800">Mapeamento de Campos</h3>
-          <p className="text-xs text-slate-500">
-            Defina quais campos compõem o gráfico e configure suas cores e agregadores.
+          <p className="text-sm text-slate-500">
+            Defina quais campos compõem o gráfico e configure suas cores, labels e filtros globais.
           </p>
         </div>
         <Select onValueChange={handleAddField} value="">
-          <SelectTrigger className="w-[200px] bg-white border-slate-200">
+          <SelectTrigger className="w-full sm:w-[250px] bg-white border-slate-200 shadow-sm focus:ring-sl-blue">
             <SelectValue placeholder="Adicionar Campo..." />
           </SelectTrigger>
           <SelectContent>
             {availableCols.map((c) => (
               <SelectItem key={c.name} value={c.name}>
-                {c.name} ({c.type})
+                {c.name} <span className="text-slate-400 text-xs ml-1">({c.type})</span>
               </SelectItem>
             ))}
             {availableCols.length === 0 && (
@@ -99,9 +100,9 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
         </Select>
       </div>
 
-      <div className="space-y-2 mt-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="space-y-4">
         {formData.campos_selecionados.length === 0 ? (
-          <div className="p-6 bg-white rounded-lg border border-dashed border-slate-200 text-center text-sm text-slate-400">
+          <div className="p-8 bg-white rounded-xl border-2 border-dashed border-slate-200 text-center text-sm text-slate-400">
             Nenhum campo adicionado. Selecione um campo acima para iniciar a configuração.
           </div>
         ) : (
@@ -114,6 +115,7 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
                     axis: 'vertical',
                     display_label: field,
                     color: '#FF8C00',
+                    is_filter: false,
                   } as ChartField)
                 : field
             return (

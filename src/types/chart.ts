@@ -5,6 +5,7 @@ export interface ChartField {
   aggregation?: 'sum' | 'avg' | 'count' | 'min' | 'max'
   display_label: string
   color: string
+  is_filter?: boolean
 }
 
 export interface ChartFormData {
@@ -13,4 +14,11 @@ export interface ChartFormData {
   tipo_grafico: string
   descricao: string
   campos_selecionados: ChartField[]
+}
+
+export interface DashboardData {
+  id?: string
+  nome: string
+  descricao: string
+  configuracao_layout: string[]
 }

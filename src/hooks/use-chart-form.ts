@@ -105,9 +105,13 @@ export function useChartForm(id?: string) {
                 aggregation: i === 0 ? undefined : 'sum',
                 display_label: c,
                 color: i === 0 ? '#0066CC' : '#FF8C00',
+                is_filter: false,
               }
             }
-            return c
+            return {
+              ...c,
+              is_filter: c.is_filter || false,
+            }
           })
 
           setFormData({

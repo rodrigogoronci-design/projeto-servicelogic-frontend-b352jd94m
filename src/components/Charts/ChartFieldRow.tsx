@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { Trash2 } from 'lucide-react'
 import { ColorPicker } from './ColorPicker'
 
@@ -19,79 +21,16 @@ interface ChartFieldRowProps {
 
 export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps) {
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center gap-3 p-3 bg-white border border-slate-100 rounded-lg shadow-sm">
-      <div
-        className="w-full md:w-40 truncate font-semibold text-sm text-slate-800"
-        title={field.field_name}
-      >
-        {field.field_name}
-      </div>
-
-      <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
-        <Select value={field.type} onValueChange={(val: any) => onChange({ ...field, type: val })}>
-          <SelectTrigger className="w-full md:w-[110px] h-8 text-xs bg-slate-50">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="dimension" className="text-xs">
-              Dimensão
-            </SelectItem>
-            <SelectItem value="metric" className="text-xs">
-              Métrica
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={field.axis} onValueChange={(val: any) => onChange({ ...field, axis: val })}>
-          <SelectTrigger className="w-full md:w-[100px] h-8 text-xs bg-slate-50">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="horizontal" className="text-xs">
-              Eixo X
-            </SelectItem>
-            <SelectItem value="vertical" className="text-xs">
-              Eixo Y
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={field.aggregation || 'sum'}
-          onValueChange={(val: any) => onChange({ ...field, aggregation: val })}
-          disabled={field.type === 'dimension'}
-        >
-          <SelectTrigger className="w-full md:w-[100px] h-8 text-xs bg-slate-50">
-            <SelectValue placeholder="Agreg." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="sum" className="text-xs">
-              Soma
-            </SelectItem>
-            <SelectItem value="avg" className="text-xs">
-              Média
-            </SelectItem>
-            <SelectItem value="count" className="text-xs">
-              Contagem
-            </SelectItem>
-            <SelectItem value="min" className="text-xs">
-              Mínimo
-            </SelectItem>
-            <SelectItem value="max" className="text-xs">
-              Máximo
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center gap-2 w-full md:flex-1 mt-2 md:mt-0">
-        <Input
-          value={field.display_label}
-          onChange={(e) => onChange({ ...field, display_label: e.target.value })}
-          placeholder="Rótulo (ex: Valor Total)"
-          className="h-8 text-xs flex-1 bg-slate-50"
-        />
-        <ColorPicker color={field.color} onChange={(c) => onChange({ ...field, color: c })} />
+    <div className="flex flex-col gap-4 p-4 bg-white border border-slate-200 rounded-lg shadow-sm transition-all hover:shadow-md w-full">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Campo Original:
+          </span>
+          <span className="font-mono text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded">
+            {field.field_name}
+          </span>
+        </div>
         <Button
           type="button"
           variant="ghost"
@@ -102,6 +41,89 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
         >
           <Trash2 className="size-4" />
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="space-y-2 lg:col-span-2">
+          <Label className="text-xs text-slate-500">Label de Exibição (Display Name)</Label>
+          <Input
+            value={field.display_label}
+            onChange={(e) => onChange({ ...field, display_label: e.target.value })}
+            placeholder="Nome amigável"
+            className="h-9 focus-visible:ring-sl-blue"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-500">Tipo do Dado</Label>
+          <Select
+            value={field.type}
+            onValueChange={(val: any) => onChange({ ...field, type: val })}
+          >
+            <SelectTrigger className="h-9 focus:ring-sl-blue">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dimension">Dimensão</SelectItem>
+              <SelectItem value="metric">Métrica</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-500">Eixo e Agregação</Label>
+          <div className="flex gap-2">
+            <Select
+              value={field.axis}
+              onValueChange={(val: any) => onChange({ ...field, axis: val })}
+            >
+              <SelectTrigger className="h-9 w-full focus:ring-sl-blue">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="horizontal">Eixo X</SelectItem>
+                <SelectItem value="vertical">Eixo Y</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={field.aggregation || 'sum'}
+              onValueChange={(val: any) => onChange({ ...field, aggregation: val })}
+              disabled={field.type === 'dimension'}
+            >
+              <SelectTrigger className="h-9 w-full focus:ring-sl-blue">
+                <SelectValue placeholder="Agreg." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sum">Soma</SelectItem>
+                <SelectItem value="avg">Média</SelectItem>
+                <SelectItem value="count">Contag.</SelectItem>
+                <SelectItem value="min">Mínimo</SelectItem>
+                <SelectItem value="max">Máximo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2 flex flex-col justify-end">
+          <div className="flex items-center gap-3 h-9">
+            <ColorPicker color={field.color} onChange={(c) => onChange({ ...field, color: c })} />
+            <div className="flex items-center space-x-2 border border-slate-200 px-3 h-9 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors w-full cursor-pointer">
+              <Checkbox
+                id={`filter-${field.field_name}`}
+                checked={field.is_filter}
+                onCheckedChange={(c) => onChange({ ...field, is_filter: !!c })}
+                className="data-[state=checked]:bg-sl-blue data-[state=checked]:border-sl-blue"
+              />
+              <label
+                htmlFor={`filter-${field.field_name}`}
+                className="text-xs font-medium leading-none cursor-pointer select-none flex-1 py-2 text-slate-700"
+              >
+                Usar como Filtro
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
