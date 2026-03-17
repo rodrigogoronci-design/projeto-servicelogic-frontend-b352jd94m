@@ -1,9 +1,8 @@
 {
   "_versions": {
-    "auth-servicelogic": 2,
+    "auth-servicelogic": 1,
     "scrape-servicelogic": 1,
     "process-excel": 1,
-    "schedule-imports": 1,
-    "functions": 1
+    "schedule-imports": 1
   }
 }

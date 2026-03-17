@@ -2972,6 +2972,11 @@ body{
   color: hsl(var(--sidebar-accent-foreground));
 }
 
+.hover\:text-sl-blue:hover{
+  --tw-text-opacity: 1;
+  color: rgb(0 51 153 / var(--tw-text-opacity, 1));
+}
+
 .hover\:text-sl-orange:hover{
   --tw-text-opacity: 1;
   color: rgb(255 140 0 / var(--tw-text-opacity, 1));

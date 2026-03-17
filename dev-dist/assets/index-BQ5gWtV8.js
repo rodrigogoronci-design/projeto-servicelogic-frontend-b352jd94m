@@ -21304,7 +21304,7 @@ var isHttpResponse = (data) => {
 var basicToast = toastFunction;
 var getHistory = () => ToastState.toasts;
 var getToasts = () => ToastState.getActiveToasts();
-Object.assign(basicToast, {
+var toast = Object.assign(basicToast, {
 	success: ToastState.success,
 	info: ToastState.info,
 	warning: ToastState.warning,
@@ -42102,58 +42102,75 @@ function Index() {
 			setIsLoading(false);
 		} else navigate("/app");
 	};
+	const handleTestExtraction = async () => {
+		try {
+			const { data, error } = await supabase.functions.invoke("scrape-servicelogic", { body: {
+				token: "auth",
+				reportPath: "Financeiro/Relatórios/Pagamentos"
+			} });
+			if (error) {
+				toast.error(`Erro: ${error.message || "Falha ao executar extração"}`);
+				return;
+			}
+			toast.success("Processo de extração finalizado/respondido com sucesso!");
+			console.log("Extraction response:", data);
+		} catch (err) {
+			toast.error(`Erro de rede: ${err.message || "Falha na requisição"}`);
+			console.error("Failed to fetch:", err);
+		}
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		"data-uid": "src/pages/Index.tsx:42:5",
+		"data-uid": "src/pages/Index.tsx:63:5",
 		"data-prohibitions": "[editContent]",
 		className: "min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#FF8C00] to-[#003399] p-4 relative overflow-hidden",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				"data-uid": "src/pages/Index.tsx:43:7",
+				"data-uid": "src/pages/Index.tsx:64:7",
 				"data-prohibitions": "[editContent]",
 				className: "absolute top-0 left-0 w-full h-full bg-[url('https://img.usecurling.com/p/800/800?q=abstract&color=white')] opacity-5 mix-blend-overlay pointer-events-none bg-cover"
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				"data-uid": "src/pages/Index.tsx:45:7",
+				"data-uid": "src/pages/Index.tsx:66:7",
 				"data-prohibitions": "[editContent]",
 				className: "w-full max-w-md z-10 animate-fade-in-up",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-					"data-uid": "src/pages/Index.tsx:46:9",
+					"data-uid": "src/pages/Index.tsx:67:9",
 					"data-prohibitions": "[editContent]",
 					className: "shadow-2xl border-0 bg-white/95 backdrop-blur-md rounded-2xl overflow-hidden",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/Index.tsx:47:11",
+							"data-uid": "src/pages/Index.tsx:68:11",
 							"data-prohibitions": "[editContent]",
 							className: "h-2 w-full bg-gradient-to-r from-sl-orange to-sl-blue"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, {
-							"data-uid": "src/pages/Index.tsx:48:11",
+							"data-uid": "src/pages/Index.tsx:69:11",
 							"data-prohibitions": "[]",
 							className: "space-y-1 pb-6 pt-8",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								"data-uid": "src/pages/Index.tsx:49:13",
+								"data-uid": "src/pages/Index.tsx:70:13",
 								"data-prohibitions": "[]",
 								className: "flex flex-col items-center gap-2 mb-4",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										"data-uid": "src/pages/Index.tsx:50:15",
+										"data-uid": "src/pages/Index.tsx:71:15",
 										"data-prohibitions": "[]",
 										className: "size-16 rounded-2xl bg-gradient-to-tr from-sl-orange to-sl-blue flex items-center justify-center shadow-lg",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"data-uid": "src/pages/Index.tsx:51:17",
+											"data-uid": "src/pages/Index.tsx:72:17",
 											"data-prohibitions": "[]",
 											className: "text-white font-bold text-3xl",
 											children: "S"
 										})
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-										"data-uid": "src/pages/Index.tsx:53:15",
+										"data-uid": "src/pages/Index.tsx:74:15",
 										"data-prohibitions": "[]",
 										className: "text-3xl font-bold tracking-tight text-slate-900 mt-2",
 										children: "Servicelogic"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, {
-										"data-uid": "src/pages/Index.tsx:56:15",
+										"data-uid": "src/pages/Index.tsx:77:15",
 										"data-prohibitions": "[]",
 										className: "text-center text-base",
 										children: "Plataforma Centralizada de Gestão"
@@ -42161,50 +42178,50 @@ function Index() {
 								]
 							})
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, {
-							"data-uid": "src/pages/Index.tsx:61:11",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
+							"data-uid": "src/pages/Index.tsx:82:11",
 							"data-prohibitions": "[editContent]",
 							className: "px-8 pb-8",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-								"data-uid": "src/pages/Index.tsx:62:13",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+								"data-uid": "src/pages/Index.tsx:83:13",
 								"data-prohibitions": "[editContent]",
 								onSubmit: handleLogin,
 								className: "space-y-5",
 								children: [
 									errorMsg && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/Index.tsx:64:17",
+										"data-uid": "src/pages/Index.tsx:85:17",
 										"data-prohibitions": "[editContent]",
 										className: "p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, {
-											"data-uid": "src/pages/Index.tsx:65:19",
+											"data-uid": "src/pages/Index.tsx:86:19",
 											"data-prohibitions": "[editContent]",
 											className: "size-4 shrink-0"
 										}), errorMsg]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/Index.tsx:69:15",
+										"data-uid": "src/pages/Index.tsx:90:15",
 										"data-prohibitions": "[]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-											"data-uid": "src/pages/Index.tsx:70:17",
+											"data-uid": "src/pages/Index.tsx:91:17",
 											"data-prohibitions": "[]",
 											htmlFor: "email",
 											children: "E-mail"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/Index.tsx:71:17",
+											"data-uid": "src/pages/Index.tsx:92:17",
 											"data-prohibitions": "[]",
 											className: "relative",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												"data-uid": "src/pages/Index.tsx:72:19",
+												"data-uid": "src/pages/Index.tsx:93:19",
 												"data-prohibitions": "[]",
 												className: "absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, {
-													"data-uid": "src/pages/Index.tsx:73:21",
+													"data-uid": "src/pages/Index.tsx:94:21",
 													"data-prohibitions": "[editContent]",
 													className: "size-5"
 												})
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Index.tsx:75:19",
+												"data-uid": "src/pages/Index.tsx:96:19",
 												"data-prohibitions": "[editContent]",
 												id: "email",
 												type: "email",
@@ -42217,42 +42234,42 @@ function Index() {
 										})]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										"data-uid": "src/pages/Index.tsx:86:15",
+										"data-uid": "src/pages/Index.tsx:107:15",
 										"data-prohibitions": "[editContent]",
 										className: "space-y-2",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/Index.tsx:87:17",
+											"data-uid": "src/pages/Index.tsx:108:17",
 											"data-prohibitions": "[]",
 											className: "flex items-center justify-between",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
-												"data-uid": "src/pages/Index.tsx:88:19",
+												"data-uid": "src/pages/Index.tsx:109:19",
 												"data-prohibitions": "[]",
 												htmlFor: "password",
 												children: "Senha"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
-												"data-uid": "src/pages/Index.tsx:89:19",
+												"data-uid": "src/pages/Index.tsx:110:19",
 												"data-prohibitions": "[]",
 												href: "#",
 												className: "text-xs font-medium text-sl-blue hover:text-sl-orange transition-colors",
 												children: "Esqueceu a senha?"
 											})]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											"data-uid": "src/pages/Index.tsx:96:17",
+											"data-uid": "src/pages/Index.tsx:117:17",
 											"data-prohibitions": "[editContent]",
 											className: "relative",
 											children: [
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													"data-uid": "src/pages/Index.tsx:97:19",
+													"data-uid": "src/pages/Index.tsx:118:19",
 													"data-prohibitions": "[]",
 													className: "absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400",
 													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, {
-														"data-uid": "src/pages/Index.tsx:98:21",
+														"data-uid": "src/pages/Index.tsx:119:21",
 														"data-prohibitions": "[editContent]",
 														className: "size-5"
 													})
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													"data-uid": "src/pages/Index.tsx:100:19",
+													"data-uid": "src/pages/Index.tsx:121:19",
 													"data-prohibitions": "[editContent]",
 													id: "password",
 													type: showPassword ? "text" : "password",
@@ -42263,17 +42280,17 @@ function Index() {
 													onChange: (e) => setPassword(e.target.value)
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-													"data-uid": "src/pages/Index.tsx:109:19",
+													"data-uid": "src/pages/Index.tsx:130:19",
 													"data-prohibitions": "[editContent]",
 													type: "button",
 													onClick: () => setShowPassword(!showPassword),
 													className: "absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600",
 													children: showPassword ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EyeOff, {
-														"data-uid": "src/pages/Index.tsx:114:37",
+														"data-uid": "src/pages/Index.tsx:135:37",
 														"data-prohibitions": "[editContent]",
 														className: "size-5"
 													}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, {
-														"data-uid": "src/pages/Index.tsx:114:69",
+														"data-uid": "src/pages/Index.tsx:135:69",
 														"data-prohibitions": "[editContent]",
 														className: "size-5"
 													})
@@ -42282,7 +42299,7 @@ function Index() {
 										})]
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-										"data-uid": "src/pages/Index.tsx:118:15",
+										"data-uid": "src/pages/Index.tsx:139:15",
 										"data-prohibitions": "[editContent]",
 										type: "submit",
 										className: "w-full h-12 text-base font-semibold bg-gradient-to-r from-sl-orange to-sl-blue hover:opacity-90 btn-scale border-0 shadow-lg mt-6 text-white",
@@ -42290,21 +42307,38 @@ function Index() {
 										children: isLoading ? "Autenticando..." : "Entrar"
 									})
 								]
-							})
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								"data-uid": "src/pages/Index.tsx:148:13",
+								"data-prohibitions": "[]",
+								className: "mt-6 pt-6 border-t border-slate-100 flex justify-center",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+									"data-uid": "src/pages/Index.tsx:149:15",
+									"data-prohibitions": "[]",
+									variant: "ghost",
+									size: "sm",
+									onClick: handleTestExtraction,
+									className: "text-slate-500 hover:text-sl-blue flex items-center gap-2 text-xs transition-colors",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloudDownload, {
+										"data-uid": "src/pages/Index.tsx:155:17",
+										"data-prohibitions": "[editContent]",
+										className: "size-4"
+									}), "Testar Extração (Debug)"]
+								})
+							})]
 						})
 					]
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("footer", {
-				"data-uid": "src/pages/Index.tsx:130:7",
+				"data-uid": "src/pages/Index.tsx:163:7",
 				"data-prohibitions": "[editContent]",
 				className: "absolute bottom-6 flex flex-col items-center text-sm text-white/80 animate-fade-in gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldCheck, {
-					"data-uid": "src/pages/Index.tsx:131:9",
+					"data-uid": "src/pages/Index.tsx:164:9",
 					"data-prohibitions": "[editContent]",
 					className: "size-5 opacity-60"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-					"data-uid": "src/pages/Index.tsx:132:9",
+					"data-uid": "src/pages/Index.tsx:165:9",
 					"data-prohibitions": "[editContent]",
 					children: [
 						"© ",
@@ -48409,4 +48443,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-DKNiysQR.js.map
+//# sourceMappingURL=index-BQ5gWtV8.js.map
