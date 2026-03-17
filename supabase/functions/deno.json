@@ -5,9 +5,11 @@
     "process-excel": 1,
     "schedule-imports": 1,
     "test-sql-connection": 1,
-    "fetch-sql-data": 3,
+    "fetch-sql-data": 1,
     "get-sql-tables": 1,
-    "get-chart-preview": 4,
-    "functions": 1
+    "get-chart-preview": 1
+  }
+}
+functions": 1
   }
 }
