@@ -2,7 +2,7 @@
   "_versions": {
     "auth-servicelogic": 1,
     "extract-reports": 2,
-    "process-data": 2,
+    "process-data": 3,
     "cron-scheduler": 1
   }
 }
