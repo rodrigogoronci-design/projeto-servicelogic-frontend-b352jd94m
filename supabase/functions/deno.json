@@ -3,6 +3,7 @@
     "auth-servicelogic": 2,
     "scrape-servicelogic": 1,
     "process-excel": 1,
-    "schedule-imports": 1
+    "schedule-imports": 1,
+    "functions": 1
   }
 }
