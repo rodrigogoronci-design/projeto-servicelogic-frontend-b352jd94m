@@ -9,6 +9,8 @@ import Index from './pages/Index'
 import DashboardSQL from './pages/DashboardSQL'
 import Credentials from './pages/Settings/Credentials'
 import ExecutionLogs from './pages/Logs/ExecutionLogs'
+import ChartList from './pages/Charts/ChartList'
+import ChartForm from './pages/Charts/ChartForm'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -29,6 +31,9 @@ const App = () => (
             }
           >
             <Route index element={<DashboardSQL />} />
+            <Route path="graficos" element={<ChartList />} />
+            <Route path="graficos/novo" element={<ChartForm />} />
+            <Route path="graficos/:id" element={<ChartForm />} />
             <Route path="credenciais" element={<Credentials />} />
             <Route path="logs" element={<ExecutionLogs />} />
           </Route>

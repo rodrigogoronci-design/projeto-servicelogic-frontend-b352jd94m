@@ -5,6 +5,8 @@
     "process-excel": 1,
     "schedule-imports": 1,
     "test-sql-connection": 1,
-    "fetch-sql-data": 1
+    "fetch-sql-data": 2,
+    "get-sql-tables": 1,
+    "get-chart-preview": 1
   }
 }

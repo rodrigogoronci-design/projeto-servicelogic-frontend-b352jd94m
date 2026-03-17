@@ -17,12 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Settings, LogOut, Activity, BarChart3 } from 'lucide-react'
+import { Settings, LogOut, Activity, BarChart3, PieChart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard SQL', href: '/app', icon: BarChart3, exact: true },
+  { name: 'Meus Gráficos', href: '/app/graficos', icon: PieChart, exact: false },
   { name: 'Logs & Monitoramento', href: '/app/logs', icon: Activity, exact: false },
   { name: 'Configurações', href: '/app/credenciais', icon: Settings, exact: false },
 ]
@@ -91,7 +92,9 @@ function TopHeader() {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white/80 px-4 sm:px-6 backdrop-blur-md shadow-sm">
       <div className="flex items-center gap-4">
         <SidebarTrigger onClick={toggleSidebar} className="md:hidden text-slate-500" />
-        <h1 className="text-xl font-semibold text-slate-800 hidden sm:block">{currentNav.name}</h1>
+        <h1 className="text-xl font-semibold text-slate-800 hidden sm:block">
+          {currentNav?.name || 'Servicelogic'}
+        </h1>
       </div>
 
       <div className="flex items-center gap-4">
