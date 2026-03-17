@@ -6,12 +6,7 @@ import { AuthProvider } from '@/hooks/use-auth'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/MainLayout'
 import Index from './pages/Index'
-import Dashboard from './pages/Dashboard'
 import DashboardSQL from './pages/DashboardSQL'
-import ReportList from './pages/Reports/ReportList'
-import NewReport from './pages/Reports/NewReport'
-import ImportedData from './pages/Data/ImportedData'
-import DataDetails from './pages/Data/DataDetails'
 import Credentials from './pages/Settings/Credentials'
 import ExecutionLogs from './pages/Logs/ExecutionLogs'
 import NotFound from './pages/NotFound'
@@ -33,13 +28,7 @@ const App = () => (
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard-sql" element={<DashboardSQL />} />
-            <Route path="relatorios" element={<ReportList />} />
-            <Route path="relatorios/novo" element={<NewReport />} />
-            <Route path="relatorios/:id/editar" element={<NewReport />} />
-            <Route path="dados" element={<ImportedData />} />
-            <Route path="dados/:id" element={<DataDetails />} />
+            <Route index element={<DashboardSQL />} />
             <Route path="credenciais" element={<Credentials />} />
             <Route path="logs" element={<ExecutionLogs />} />
           </Route>

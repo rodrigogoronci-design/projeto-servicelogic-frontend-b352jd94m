@@ -4,134 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { KeyRound, Save, Server, Link as LinkIcon, Loader2 } from 'lucide-react'
+import { KeyRound, Save, Link as LinkIcon, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
-
-function ServicelogicCreds() {
-  const { toast } = useToast()
-  const { user } = useAuth()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const [formData, setFormData] = useState({
-    username: '',
-    password_encrypted: '',
-  })
-
-  useEffect(() => {
-    const fetchCreds = async () => {
-      if (!user) return
-      try {
-        const { data } = await supabase
-          .from('credenciais_servicelogic' as any)
-          .select('username, password_encrypted')
-          .eq('usuario_id', user.id)
-          .maybeSingle()
-
-        if (data)
-          setFormData({ username: data.username, password_encrypted: data.password_encrypted })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchCreds()
-  }, [user])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-    setIsSubmitting(true)
-
-    try {
-      const { data: existing } = await supabase
-        .from('credenciais_servicelogic' as any)
-        .select('id')
-        .eq('usuario_id', user.id)
-        .maybeSingle()
-      let error
-      if (existing) {
-        const res = await supabase
-          .from('credenciais_servicelogic' as any)
-          .update({
-            username: formData.username,
-            password_encrypted: formData.password_encrypted,
-            atualizado_em: new Date().toISOString(),
-          })
-          .eq('id', existing.id)
-        error = res.error
-      } else {
-        const res = await supabase.from('credenciais_servicelogic' as any).insert({
-          usuario_id: user.id,
-          username: formData.username,
-          password_encrypted: formData.password_encrypted,
-        })
-        error = res.error
-      }
-
-      if (error) throw error
-      toast({ title: 'Credenciais Atualizadas', description: 'Configurações Servicelogic salvas.' })
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <CardHeader>
-        <CardTitle>Credenciais Servicelogic (Legado)</CardTitle>
-        <CardDescription>
-          Dados utilizados pelas automações para extrair relatórios via web scraping.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {isLoading ? (
-          <div className="h-24 flex items-center justify-center text-muted-foreground">
-            <Loader2 className="animate-spin size-5" />
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input
-                id="username"
-                required
-                placeholder="ex: admin_legado"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="focus-visible:ring-sl-orange"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password_encrypted">Senha</Label>
-              <Input
-                id="password_encrypted"
-                type="password"
-                required
-                placeholder="••••••••"
-                value={formData.password_encrypted}
-                onChange={(e) => setFormData({ ...formData, password_encrypted: e.target.value })}
-                className="focus-visible:ring-sl-orange"
-              />
-            </div>
-            <div className="pt-4 border-t flex justify-end">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md"
-              >
-                <Save className="size-4" /> {isSubmitting ? 'Salvando...' : 'Salvar Credenciais'}
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </form>
-  )
-}
 
 function SqlServerCreds() {
   const { toast } = useToast()
@@ -357,44 +232,19 @@ function SqlServerCreds() {
 
 export default function Credentials() {
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl animate-fade-in-up">
       <div>
         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2 text-slate-800">
           <KeyRound className="size-7 text-sl-orange" /> Gestão de Credenciais
         </h2>
         <p className="text-slate-500 mt-1">
-          Configure os acessos necessários para o funcionamento das integrações.
+          Configure os acessos necessários para o funcionamento da integração SQL Server.
         </p>
       </div>
 
-      <Tabs defaultValue="servicelogic" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 p-1 rounded-lg">
-          <TabsTrigger
-            value="servicelogic"
-            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
-          >
-            Servicelogic
-          </TabsTrigger>
-          <TabsTrigger
-            value="sqlserver"
-            className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2"
-          >
-            <Server className="size-4" /> SQL Server
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="servicelogic" className="mt-4 animate-fade-in">
-          <Card className="border-slate-200 shadow-sm bg-white">
-            <ServicelogicCreds />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sqlserver" className="mt-4 animate-fade-in">
-          <Card className="border-slate-200 shadow-sm bg-white border-t-4 border-t-sl-blue">
-            <SqlServerCreds />
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card className="border-slate-200 shadow-sm bg-white border-t-4 border-t-sl-blue mt-4">
+        <SqlServerCreds />
+      </Card>
     </div>
   )
 }

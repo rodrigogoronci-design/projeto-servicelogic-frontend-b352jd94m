@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, AlertCircle, ShieldCheck, DownloadCloud } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
-import { supabase } from '@/lib/supabase/client'
-import { toast } from 'sonner'
 
 export default function Index() {
   const [showPassword, setShowPassword] = useState(false)
@@ -37,25 +35,6 @@ export default function Index() {
       setIsLoading(false)
     } else {
       navigate('/app')
-    }
-  }
-
-  const handleTestExtraction = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('scrape-servicelogic', {
-        body: { token: 'auth', reportPath: 'Financeiro/Relatórios/Pagamentos' },
-      })
-
-      if (error) {
-        toast.error(`Erro: ${error.message || 'Falha ao executar extração'}`)
-        return
-      }
-
-      toast.success('Processo de extração finalizado/respondido com sucesso!')
-      console.log('Extraction response:', data)
-    } catch (err: any) {
-      toast.error(`Erro de rede: ${err.message || 'Falha na requisição'}`)
-      console.error('Failed to fetch:', err)
     }
   }
 
@@ -144,18 +123,6 @@ export default function Index() {
                 {isLoading ? 'Autenticando...' : 'Entrar'}
               </Button>
             </form>
-
-            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTestExtraction}
-                className="text-slate-500 hover:text-sl-blue flex items-center gap-2 text-xs transition-colors"
-              >
-                <DownloadCloud className="size-4" />
-                Testar Extração (Debug)
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
