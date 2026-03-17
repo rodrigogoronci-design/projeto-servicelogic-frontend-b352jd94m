@@ -2,39 +2,46 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { AuthProvider } from '@/hooks/use-auth'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/MainLayout'
 import Index from './pages/Index'
 import Dashboard from './pages/Dashboard'
 import NewReport from './pages/Reports/NewReport'
 import ImportedData from './pages/Data/ImportedData'
+import Logs from './pages/Logs/Logs'
+import Credentials from './pages/Settings/Credentials'
 import NotFound from './pages/NotFound'
 
 const App = () => (
-  <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Routes>
-        <Route path="/" element={<Index />} />
+  <AuthProvider>
+    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route path="/" element={<Index />} />
 
-        <Route path="/app" element={<MainLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="relatorios/novo" element={<NewReport />} />
-          <Route path="dados" element={<ImportedData />} />
           <Route
-            path="configuracoes"
+            path="/app"
             element={
-              <div className="p-4 text-muted-foreground">
-                Página de configurações em construção...
-              </div>
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
             }
-          />
-        </Route>
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="relatorios/novo" element={<NewReport />} />
+            <Route path="dados" element={<ImportedData />} />
+            <Route path="logs" element={<Logs />} />
+            <Route path="credenciais" element={<Credentials />} />
+          </Route>
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
-  </BrowserRouter>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </BrowserRouter>
+  </AuthProvider>
 )
 
 export default App

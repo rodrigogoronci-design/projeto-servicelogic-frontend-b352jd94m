@@ -1,0 +1,34 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { corsHeaders } from '../_shared/cors.ts'
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const { token, reportPath } = await req.json()
+
+    if (!token) throw new Error('Unauthorized')
+
+    // Simulate downloading an Excel file from the legacy system
+    const mockExcelData = 'mock_base64_encoded_excel_content'
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        fileData: mockExcelData,
+        path: reportPath,
+      }),
+      {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        status: 200,
+      },
+    )
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 400,
+    })
+  }
+})

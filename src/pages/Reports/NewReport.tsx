@@ -7,13 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -22,28 +15,70 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Save, RefreshCw } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function NewReport() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const initialFormState = {
-    nome: '',
-    sistema: 'servicelogic',
-    caminho: '',
+    nome_relatorio: '',
+    caminho_relatorio: '',
     parametros: '{\n  "exportFormat": "csv",\n  "includeHeaders": true\n}',
-    frequencia: '24',
+    frequencia_horas: '24',
     ativo: true,
   }
 
   const [formData, setFormData] = useState(initialFormState)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast({
-      title: 'Relatório salvo com sucesso!',
-      description: `A automação para "${formData.nome}" foi configurada.`,
-    })
-    setFormData(initialFormState)
+    if (!user) return
+
+    setIsSubmitting(true)
+
+    try {
+      let parsedParams = {}
+      try {
+        parsedParams = JSON.parse(formData.parametros)
+      } catch {
+        toast({
+          title: 'JSON Inválido',
+          description: 'O formato dos parâmetros não é um JSON válido.',
+          variant: 'destructive',
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      const { error } = await supabase.from('configuracao_relatorios' as any).insert({
+        user_id: user.id,
+        nome_relatorio: formData.nome_relatorio,
+        sistema_origem: 'Servicelogic',
+        caminho_relatorio: formData.caminho_relatorio,
+        parametros: parsedParams,
+        frequencia_horas: Number(formData.frequencia_horas),
+        ativo: formData.ativo,
+      })
+
+      if (error) throw error
+
+      toast({
+        title: 'Relatório salvo com sucesso!',
+        description: `A automação para "${formData.nome_relatorio}" foi configurada.`,
+      })
+      setFormData(initialFormState)
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message || 'Ocorreu um erro ao persistir as configurações.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
@@ -76,40 +111,23 @@ export default function NewReport() {
           <CardHeader>
             <CardTitle>Configuração Geral</CardTitle>
             <CardDescription>
-              Preencha os dados necessários para a integração do relatório.
+              Preencha os dados necessários para a integração do relatório (Sistema Origem:
+              Servicelogic).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="nome">
-                  Nome do Relatório <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="nome"
-                  required
-                  placeholder="Ex: Faturamento Mensal Consolidado"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="focus-visible:ring-sl-orange"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sistema">Sistema de Origem</Label>
-                <Select
-                  value={formData.sistema}
-                  onValueChange={(val) => setFormData({ ...formData, sistema: val })}
-                >
-                  <SelectTrigger className="focus-visible:ring-sl-orange">
-                    <SelectValue placeholder="Selecione o sistema" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="servicelogic">Servicelogic</SelectItem>
-                    <SelectItem value="legado_erp">Legado ERP</SelectItem>
-                    <SelectItem value="api_externa">API Externa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nome">
+                Nome do Relatório <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="nome"
+                required
+                placeholder="Ex: Faturamento Mensal Consolidado"
+                value={formData.nome_relatorio}
+                onChange={(e) => setFormData({ ...formData, nome_relatorio: e.target.value })}
+                className="focus-visible:ring-sl-orange"
+              />
             </div>
 
             <div className="space-y-2">
@@ -119,9 +137,9 @@ export default function NewReport() {
               <Input
                 id="caminho"
                 required
-                placeholder="/api/v1/export/faturamento ou C:\dados\relatorio.csv"
-                value={formData.caminho}
-                onChange={(e) => setFormData({ ...formData, caminho: e.target.value })}
+                placeholder="/api/v1/export/faturamento"
+                value={formData.caminho_relatorio}
+                onChange={(e) => setFormData({ ...formData, caminho_relatorio: e.target.value })}
                 className="focus-visible:ring-sl-orange font-mono text-sm"
               />
             </div>
@@ -145,8 +163,9 @@ export default function NewReport() {
                   type="number"
                   min="1"
                   max="720"
-                  value={formData.frequencia}
-                  onChange={(e) => setFormData({ ...formData, frequencia: e.target.value })}
+                  required
+                  value={formData.frequencia_horas}
+                  onChange={(e) => setFormData({ ...formData, frequencia_horas: e.target.value })}
                   className="focus-visible:ring-sl-orange w-full md:w-1/2"
                 />
               </div>
@@ -170,16 +189,23 @@ export default function NewReport() {
             </div>
 
             <div className="pt-6 border-t flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={handleReset} className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleReset}
+                className="gap-2"
+                disabled={isSubmitting}
+              >
                 <RefreshCw className="size-4" />
                 Limpar
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="gap-2 bg-gradient-corporate btn-scale text-white border-0 shadow-md"
               >
                 <Save className="size-4" />
-                Salvar Configuração
+                {isSubmitting ? 'Salvando...' : 'Salvar Configuração'}
               </Button>
             </div>
           </CardContent>

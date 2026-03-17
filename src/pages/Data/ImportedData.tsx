@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,67 +29,34 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Eye, Trash2, DownloadCloud, Search, AlertCircle, CheckCircle2 } from 'lucide-react'
-
-// Mock Data
-const MOCK_DATA = [
-  {
-    id: 'IMP-001',
-    date: '2023-10-27T10:30:00',
-    status: 'processado',
-    source: 'ERP Legado',
-    records: 1250,
-    errorDetails: null,
-  },
-  {
-    id: 'IMP-002',
-    date: '2023-10-27T11:45:00',
-    status: 'erro',
-    source: 'API Externa',
-    records: 0,
-    errorDetails: 'Timeout connection (3000ms)',
-  },
-  {
-    id: 'IMP-003',
-    date: '2023-10-28T09:15:00',
-    status: 'processado',
-    source: 'Servicelogic DB',
-    records: 430,
-    errorDetails: null,
-  },
-  {
-    id: 'IMP-004',
-    date: '2023-10-28T14:20:00',
-    status: 'processado',
-    source: 'ERP Legado',
-    records: 890,
-    errorDetails: null,
-  },
-  {
-    id: 'IMP-005',
-    date: '2023-10-29T08:00:00',
-    status: 'erro',
-    source: 'Servicelogic DB',
-    records: 12,
-    errorDetails: 'Data type mismatch in column "value"',
-  },
-  {
-    id: 'IMP-006',
-    date: '2023-10-29T16:30:00',
-    status: 'processado',
-    source: 'API Externa',
-    records: 55,
-    errorDetails: null,
-  },
-]
+import { supabase } from '@/lib/supabase/client'
 
 export default function ImportedData() {
   const { toast } = useToast()
-  const [data, setData] = useState(MOCK_DATA)
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('todos')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const [selectedRecord, setSelectedRecord] = useState<(typeof MOCK_DATA)[0] | null>(null)
+  const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const fetchData = async () => {
+    setLoading(true)
+    const { data: records, error } = await supabase
+      .from('dados_importados' as any)
+      .select('*')
+      .order('data_importacao', { ascending: false })
+
+    if (!error && records) {
+      setData(records)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const handleImportNow = () => {
     toast({
@@ -98,16 +65,27 @@ export default function ImportedData() {
     })
   }
 
-  const handleDelete = (id: string) => {
-    setData(data.filter((item) => item.id !== id))
-    toast({
-      title: 'Registro removido',
-      description: `O registro ${id} foi excluído com sucesso.`,
-      variant: 'destructive',
-    })
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('dados_importados' as any)
+      .delete()
+      .eq('id', id)
+    if (!error) {
+      setData(data.filter((item) => item.id !== id))
+      toast({
+        title: 'Registro removido',
+        description: `O registro foi excluído com sucesso.`,
+      })
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o registro',
+        variant: 'destructive',
+      })
+    }
   }
 
-  const openDetails = (record: (typeof MOCK_DATA)[0]) => {
+  const openDetails = (record: any) => {
     setSelectedRecord(record)
     setIsDialogOpen(true)
   }
@@ -175,7 +153,13 @@ export default function ImportedData() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                    Carregando...
+                  </TableCell>
+                </TableRow>
+              ) : filteredData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                     Nenhum registro encontrado para os filtros atuais.
@@ -184,9 +168,13 @@ export default function ImportedData() {
               ) : (
                 filteredData.map((row) => (
                   <TableRow key={row.id} className="hover:bg-blue-50/50 transition-colors group">
-                    <TableCell className="font-medium text-sl-blue">{row.id}</TableCell>
+                    <TableCell className="font-medium text-sl-blue">
+                      {row.id.split('-')[0]}
+                    </TableCell>
                     <TableCell>
-                      {format(new Date(row.date), "dd 'de' MMM, yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(row.data_importacao), "dd 'de' MMM, yyyy 'às' HH:mm", {
+                        locale: ptBR,
+                      })}
                     </TableCell>
                     <TableCell>{row.source}</TableCell>
                     <TableCell>
@@ -234,21 +222,6 @@ export default function ImportedData() {
             </TableBody>
           </Table>
         </div>
-
-        {/* Simple Pagination Footer */}
-        <div className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Mostrando 1 a {filteredData.length} de {filteredData.length} resultados
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>
-              Anterior
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              Próxima
-            </Button>
-          </div>
-        </div>
       </Card>
 
       {/* Details Modal */}
@@ -257,7 +230,7 @@ export default function ImportedData() {
           <DialogHeader>
             <DialogTitle>Detalhes da Importação</DialogTitle>
             <DialogDescription>
-              Informações completas sobre o lote de dados {selectedRecord?.id}.
+              Informações completas sobre o lote de dados {selectedRecord?.id?.split('-')[0]}.
             </DialogDescription>
           </DialogHeader>
 
@@ -267,7 +240,7 @@ export default function ImportedData() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Data/Hora</p>
                   <p className="font-medium">
-                    {format(new Date(selectedRecord.date), 'dd/MM/yyyy HH:mm')}
+                    {format(new Date(selectedRecord.data_importacao), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
                 <div>
@@ -291,17 +264,17 @@ export default function ImportedData() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Registros Lidos</p>
-                  <p className="font-medium">{selectedRecord.records.toLocaleString()}</p>
+                  <p className="font-medium">{Number(selectedRecord.registros).toLocaleString()}</p>
                 </div>
               </div>
 
-              {selectedRecord.errorDetails && (
+              {selectedRecord.error_details && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md">
                   <p className="text-sm font-semibold text-red-800 flex items-center gap-2 mb-1">
                     <AlertCircle className="size-4" /> Detalhes do Erro
                   </p>
-                  <p className="text-sm text-red-600 font-mono bg-red-100/50 p-2 rounded">
-                    {selectedRecord.errorDetails}
+                  <p className="text-sm text-red-600 font-mono bg-red-100/50 p-2 rounded break-words">
+                    {selectedRecord.error_details}
                   </p>
                 </div>
               )}

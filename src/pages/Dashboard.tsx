@@ -1,7 +1,47 @@
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Database, FileText, Activity } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    reportsCount: 0,
+    dataProcessed: 0,
+    successRate: 0,
+  })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [reportsRes, dataRes, logsRes] = await Promise.all([
+          supabase.from('configuracao_relatorios' as any).select('id', { count: 'exact' }),
+          supabase.from('dados_importados' as any).select('registros'),
+          supabase.from('log_execucoes' as any).select('status'),
+        ])
+
+        const totalData =
+          dataRes.data?.reduce(
+            (acc: number, curr: any) => acc + (Number(curr.registros) || 0),
+            0,
+          ) || 0
+
+        const logs = logsRes.data || []
+        const successCount = logs.filter((l: any) => l.status === 'sucesso').length
+        const rate = logs.length > 0 ? ((successCount / logs.length) * 100).toFixed(1) : 100
+
+        setStats({
+          reportsCount: reportsRes.count || 0,
+          dataProcessed: totalData,
+          successRate: Number(rate),
+        })
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats', error)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
@@ -20,8 +60,8 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-sl-text">12</div>
-            <p className="text-xs text-muted-foreground mt-1">+2 configurados este mês</p>
+            <div className="text-2xl font-bold text-sl-text">{stats.reportsCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Configurações ativas</p>
           </CardContent>
         </Card>
 
@@ -33,7 +73,9 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-sl-text">1,429</div>
+            <div className="text-2xl font-bold text-sl-text">
+              {stats.dataProcessed.toLocaleString()}
+            </div>
             <p className="text-xs text-green-600 mt-1 flex items-center">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
               Operando normalmente
@@ -49,8 +91,8 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-sl-text">98.5%</div>
-            <p className="text-xs text-muted-foreground mt-1">Últimas 24 horas</p>
+            <div className="text-2xl font-bold text-sl-text">{stats.successRate}%</div>
+            <p className="text-xs text-muted-foreground mt-1">Histórico geral</p>
           </CardContent>
         </Card>
       </div>

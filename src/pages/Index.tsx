@@ -1,44 +1,52 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('admin@servicelogic.com')
+  const [password, setPassword] = useState('admin123')
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const { signIn, user } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate('/app')
+    }
+  }, [user, navigate])
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
+    setErrorMsg('')
+
+    const { error } = await signIn(email, password)
+
+    if (error) {
+      setErrorMsg('Credenciais inválidas. Tente novamente.')
       setIsLoading(false)
+    } else {
       navigate('/app')
-    }, 800)
+    }
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-sl-bg p-4 relative overflow-hidden">
       {/* Abstract Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-sl-orange/10 blur-3xl" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-sl-blue/10 blur-3xl" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-sl-orange/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-sl-blue/10 blur-3xl pointer-events-none" />
 
       <div
         className="w-full max-w-md z-10 animate-fade-in-up opacity-0"
-        style={{ animationDelay: '0.1s' }}
+        style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
       >
         <div className="flex flex-col items-center mb-8 gap-3">
           <div className="size-16 rounded-2xl bg-gradient-corporate flex items-center justify-center shadow-elevation">
@@ -57,6 +65,12 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
+              {errorMsg && (
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md flex items-center gap-2 border border-red-100">
+                  <AlertCircle className="size-4" />
+                  {errorMsg}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
@@ -77,9 +91,6 @@ export default function Index() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <a href="#" className="text-sm font-medium text-sl-blue hover:underline">
-                    Esqueceu a senha?
-                  </a>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-sl-muted">

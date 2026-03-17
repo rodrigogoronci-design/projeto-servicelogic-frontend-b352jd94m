@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   SidebarProvider,
   Sidebar,
@@ -17,14 +17,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { LayoutDashboard, FileText, Database, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, Database, Activity, KeyRound, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard', href: '/app', icon: LayoutDashboard },
-  { name: 'Relatórios', href: '/app/relatorios/novo', icon: FileText },
+  { name: 'Novo Relatório', href: '/app/relatorios/novo', icon: FileText },
   { name: 'Dados Importados', href: '/app/dados', icon: Database },
-  { name: 'Configurações', href: '/app/configuracoes', icon: Settings },
+  { name: 'Logs de Execução', href: '/app/logs', icon: Activity },
+  { name: 'Credenciais Legado', href: '/app/credenciais', icon: KeyRound },
 ]
 
 function AppSidebar() {
@@ -74,9 +76,16 @@ function AppSidebar() {
 function TopHeader() {
   const { toggleSidebar } = useSidebar()
   const location = useLocation()
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
 
   const currentNav =
     navigation.find((n) => location.pathname.includes(n.href) && n.href !== '/app') || navigation[0]
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white/80 px-4 sm:px-6 backdrop-blur-md shadow-sm">
@@ -92,22 +101,23 @@ function TopHeader() {
               <Avatar className="size-9 border border-slate-200">
                 <AvatarImage
                   src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=4"
-                  alt="Admin"
+                  alt="Avatar"
                 />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-              <span className="font-medium text-sm">Administrador</span>
-              <span className="text-xs text-sl-muted">admin@servicelogic.com</span>
+            <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 cursor-default hover:bg-transparent">
+              <span className="font-medium text-sm">Conta</span>
+              <span className="text-xs text-sl-muted max-w-[150px] truncate">{user?.email}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="text-red-600 cursor-pointer p-3 mt-1 border-t">
-              <Link to="/" className="w-full flex items-center">
-                <LogOut className="mr-2 size-4" />
-                <span>Sair</span>
-              </Link>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 cursor-pointer p-3 mt-1 border-t"
+            >
+              <LogOut className="mr-2 size-4" />
+              <span>Sair</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
