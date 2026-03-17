@@ -24,19 +24,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-    return () => subscription.unsubscribe()
+
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error('Session initialization error:', error.message)
+
+          // Handle invalid refresh token specifically to prevent runtime crashes
+          if (
+            error.message.includes('Refresh Token Not Found') ||
+            error.message.includes('Invalid Refresh Token') ||
+            error.name === 'AuthApiError'
+          ) {
+            // Attempt to clear the potentially corrupted session
+            await supabase.auth.signOut().catch(console.error)
+
+            // Fallback: forcefully remove corrupted storage keys just in case
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                localStorage.removeItem(key)
+              }
+            })
+          }
+
+          setSession(null)
+          setUser(null)
+        } else {
+          setSession(data.session)
+          setUser(data.session?.user ?? null)
+        }
+      } catch (err: any) {
+        console.error('Unexpected auth error:', err.message)
+        if (mounted) {
+          setSession(null)
+          setUser(null)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    initializeAuth()
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
