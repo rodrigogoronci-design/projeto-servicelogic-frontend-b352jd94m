@@ -17,7 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { getDashboards, deleteDashboard } from '@/services/dashboards'
+import {
+  getDashboards,
+  deleteDashboard,
+  getDashboardItems,
+  deleteDashboardItem,
+} from '@/services/dashboards'
 import { useRealtime } from '@/hooks/use-realtime'
 
 export default function DashboardList() {
@@ -51,6 +56,10 @@ export default function DashboardList() {
   const handleDelete = async () => {
     if (!deleteId) return
     try {
+      const items = await getDashboardItems(deleteId).catch(() => [])
+      for (const item of items) {
+        await deleteDashboardItem(item.id).catch(() => {})
+      }
       await deleteDashboard(deleteId)
       toast({ title: 'Sucesso', description: 'Dashboard excluído com sucesso.' })
     } catch (err: any) {
@@ -71,7 +80,7 @@ export default function DashboardList() {
           <p className="text-slate-500 mt-1">Crie painéis interativos organizando seus gráficos.</p>
         </div>
         <Button asChild className="bg-sl-blue hover:bg-sl-blueLight text-white shadow-md">
-          <Link to="/app/dashboards/novo">
+          <Link to="/dashboards/novo">
             <Plus className="size-4 mr-2" />
             Novo Dashboard
           </Link>
@@ -124,7 +133,7 @@ export default function DashboardList() {
                   className="flex-1 bg-white text-sl-blue hover:text-sl-blueLight border-slate-200"
                   asChild
                 >
-                  <Link to={`/app/dashboards/${dashboard.id}`}>
+                  <Link to={`/dashboards/${dashboard.id}`}>
                     <Eye className="size-4 mr-2" /> Visualizar
                   </Link>
                 </Button>
@@ -134,7 +143,7 @@ export default function DashboardList() {
                   className="text-slate-500 hover:text-sl-orange hover:bg-orange-50"
                   asChild
                 >
-                  <Link to={`/app/dashboards/${dashboard.id}/editar`}>
+                  <Link to={`/dashboards/${dashboard.id}/editar`}>
                     <Edit className="size-4" />
                   </Link>
                 </Button>

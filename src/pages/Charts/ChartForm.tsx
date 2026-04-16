@@ -53,7 +53,7 @@ export default function ChartForm() {
           asChild
           className="text-slate-500 hover:text-slate-900 border shadow-sm bg-white"
         >
-          <Link to="/app/graficos">
+          <Link to="/graficos">
             <ArrowLeft className="size-5" />
           </Link>
         </Button>
@@ -193,7 +193,7 @@ export default function ChartForm() {
                 asChild
                 className="bg-white hover:bg-slate-50 w-full sm:w-auto"
               >
-                <Link to="/app/graficos">Cancelar</Link>
+                <Link to="/graficos">Cancelar</Link>
               </Button>
               <Button
                 type="submit"

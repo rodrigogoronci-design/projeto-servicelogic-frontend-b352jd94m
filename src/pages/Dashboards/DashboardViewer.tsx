@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function DashboardViewer() {
   const { id } = useParams<{ id: string }>()
@@ -36,6 +37,17 @@ export default function DashboardViewer() {
 
     fetchDashboard()
   }, [id, user])
+
+  useRealtime('dashboards', (e) => {
+    if (e.record.id === id) {
+      if (e.action === 'delete') {
+        setDashboard(null)
+        setErrorMsg('Dashboard excluído.')
+      } else {
+        setDashboard(e.record)
+      }
+    }
+  })
 
   if (loading) {
     return (

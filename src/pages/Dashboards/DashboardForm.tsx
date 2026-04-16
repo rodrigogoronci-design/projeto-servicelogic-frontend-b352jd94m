@@ -60,7 +60,7 @@ export default function DashboardForm() {
         }
       } catch (err: any) {
         toast({ title: 'Erro', description: err.message, variant: 'destructive' })
-        if (id) navigate('/app/dashboards')
+        if (id) navigate('/dashboards')
       } finally {
         setInitialLoading(false)
       }
@@ -136,7 +136,7 @@ export default function DashboardForm() {
       }
 
       toast({ title: 'Sucesso', description: 'Dashboard salvo com sucesso.' })
-      navigate('/app/dashboards')
+      navigate('/dashboards')
     } catch (err: any) {
       toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     } finally {
@@ -161,7 +161,7 @@ export default function DashboardForm() {
           asChild
           className="text-slate-500 hover:text-slate-900 border bg-white shadow-sm"
         >
-          <Link to="/app/dashboards">
+          <Link to="/dashboards">
             <ArrowLeft className="size-5" />
           </Link>
         </Button>
@@ -294,7 +294,7 @@ export default function DashboardForm() {
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <Button type="button" variant="outline" asChild className="bg-white">
-                <Link to="/app/dashboards">Cancelar</Link>
+                <Link to="/dashboards">Cancelar</Link>
               </Button>
               <Button
                 type="submit"

@@ -57,7 +57,7 @@ export default function ChartList() {
           <p className="text-slate-500 mt-1">Gerencie suas visualizações e métricas.</p>
         </div>
         <Button asChild className="bg-sl-blue hover:bg-sl-blueLight text-white shadow-md">
-          <Link to="/app/graficos/novo">
+          <Link to="/graficos/novo">
             <Plus className="size-4 mr-2" />
             Novo Gráfico
           </Link>
@@ -110,7 +110,7 @@ export default function ChartList() {
                   className="text-slate-500 hover:text-sl-blue"
                   asChild
                 >
-                  <Link to={`/app/graficos/${chart.id}`}>
+                  <Link to={`/graficos/${chart.id}`}>
                     <Edit className="size-4 mr-2" /> Editar
                   </Link>
                 </Button>
