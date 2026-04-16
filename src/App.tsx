@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -34,6 +34,9 @@ const App = () => (
           <Route path="credenciais" element={<Credentials />} />
           <Route path="logs" element={<ExecutionLogs />} />
         </Route>
+
+        <Route path="/app/dashboards" element={<Navigate to="/dashboards" replace />} />
+        <Route path="/app/*" element={<Navigate to="/" replace />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>
