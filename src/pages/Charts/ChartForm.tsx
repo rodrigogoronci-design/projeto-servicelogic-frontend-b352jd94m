@@ -16,6 +16,7 @@ import { useChartForm } from '@/hooks/use-chart-form'
 import { ChartTypeSelector } from '@/components/Charts/ChartTypeSelector'
 import { ChartFieldsSetup } from '@/components/Charts/ChartFieldsSetup'
 import { ChartLivePreview } from '@/components/Charts/ChartLivePreview'
+import { mapToOldFormat } from '@/types/chart'
 
 export default function ChartForm() {
   const { id } = useParams()
@@ -75,27 +76,27 @@ export default function ChartForm() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="nome_grafico">
+                <Label htmlFor="name">
                   Nome do Gráfico <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="nome_grafico"
+                  id="name"
                   required
                   placeholder="Ex: Faturamento Mensal"
-                  value={formData.nome_grafico}
-                  onChange={(e) => setFormData({ ...formData, nome_grafico: e.target.value })}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="bg-slate-50 focus:bg-white transition-colors focus-visible:ring-sl-blue"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nome_tabela">
+                <Label htmlFor="table_name">
                   Tabela Origem <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={formData.nome_tabela}
+                  value={formData.table_name}
                   onValueChange={(val) =>
-                    setFormData({ ...formData, nome_tabela: val, campos_selecionados: [] })
+                    setFormData({ ...formData, table_name: val, fields_config: [] })
                   }
                 >
                   <SelectTrigger className="bg-slate-50 focus:bg-white transition-colors focus:ring-sl-blue">
@@ -122,14 +123,14 @@ export default function ChartForm() {
                 Tipo de Gráfico <span className="text-red-500">*</span>
               </Label>
               <ChartTypeSelector
-                value={formData.tipo_grafico}
-                onChange={(v) => setFormData({ ...formData, tipo_grafico: v })}
+                value={formData.type}
+                onChange={(v) => setFormData({ ...formData, type: v })}
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="descricao">Descrição</Label>
+                <Label htmlFor="description">Descrição</Label>
                 {userEditedDesc && (
                   <Button
                     type="button"
@@ -138,7 +139,7 @@ export default function ChartForm() {
                     className="h-auto p-0 text-xs text-sl-blue"
                     onClick={() => {
                       setUserEditedDesc(false)
-                      setFormData((prev) => ({ ...prev, descricao: generatedDescription }))
+                      setFormData((prev) => ({ ...prev, description: generatedDescription }))
                     }}
                   >
                     Restaurar Auto-gerada
@@ -146,11 +147,11 @@ export default function ChartForm() {
                 )}
               </div>
               <Textarea
-                id="descricao"
+                id="description"
                 placeholder="Descreva o propósito deste gráfico..."
-                value={formData.descricao}
+                value={formData.description}
                 onChange={(e) => {
-                  setFormData({ ...formData, descricao: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                   setUserEditedDesc(true)
                 }}
                 className="bg-slate-50 focus:bg-white transition-colors resize-none focus-visible:ring-sl-blue"
@@ -174,7 +175,7 @@ export default function ChartForm() {
           <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
             <CardTitle className="flex items-center justify-between text-lg">
               Prévia do Gráfico
-              {formData.campos_selecionados.length > 0 && (
+              {formData.fields_config.length > 0 && (
                 <span className="flex h-3 w-3 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -183,7 +184,7 @@ export default function ChartForm() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <ChartLivePreview formData={formData} />
+            <ChartLivePreview formData={mapToOldFormat(formData)} />
 
             <div className="mt-8 flex justify-end gap-4 border-t border-slate-100 pt-6">
               <Button

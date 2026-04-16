@@ -28,7 +28,7 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
             Campo Original:
           </span>
           <span className="font-mono text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded">
-            {field.field_name}
+            {field.original_name}
           </span>
         </div>
         <Button
@@ -47,8 +47,8 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
         <div className="space-y-2 lg:col-span-2">
           <Label className="text-xs text-slate-500">Label de Exibição (Display Name)</Label>
           <Input
-            value={field.display_label}
-            onChange={(e) => onChange({ ...field, display_label: e.target.value })}
+            value={field.display_name}
+            onChange={(e) => onChange({ ...field, display_name: e.target.value })}
             placeholder="Nome amigável"
             className="h-9 focus-visible:ring-sl-blue"
           />
@@ -110,13 +110,13 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
             <ColorPicker color={field.color} onChange={(c) => onChange({ ...field, color: c })} />
             <div className="flex items-center space-x-2 border border-slate-200 px-3 h-9 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors w-full cursor-pointer">
               <Checkbox
-                id={`filter-${field.field_name}`}
+                id={`filter-${field.original_name}`}
                 checked={field.is_filter}
                 onCheckedChange={(c) => onChange({ ...field, is_filter: !!c })}
                 className="data-[state=checked]:bg-sl-blue data-[state=checked]:border-sl-blue"
               />
               <label
-                htmlFor={`filter-${field.field_name}`}
+                htmlFor={`filter-${field.original_name}`}
                 className="text-xs font-medium leading-none cursor-pointer select-none flex-1 py-2 text-slate-700"
               >
                 Usar como Filtro

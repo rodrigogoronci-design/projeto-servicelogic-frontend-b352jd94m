@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, Filter, LayoutDashboard } from 'lucide-react'
+import { ArrowLeft, Loader2, Filter, LayoutDashboard, PieChart } from 'lucide-react'
 import { ChartRenderer } from '@/components/Charts/ChartRenderer'
-import { DashboardData, ChartFormData, ChartField } from '@/types/chart'
+import { DashboardData, ChartFormData, ChartField, mapToOldFormat } from '@/types/chart'
+import { getDashboard, getDashboardItems } from '@/services/dashboards'
 
 function DashboardChartCard({
   chart,
@@ -22,6 +23,8 @@ function DashboardChartCard({
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const oldFormat = useMemo(() => mapToOldFormat(chart), [chart])
+
   useEffect(() => {
     let isMounted = true
     setLoading(true)
@@ -30,9 +33,9 @@ function DashboardChartCard({
       .invoke('get-chart-preview', {
         body: {
           usuario_id: user?.id,
-          nome_tabela: chart.nome_tabela,
-          campos_selecionados: chart.campos_selecionados,
-          tipo_grafico: chart.tipo_grafico,
+          nome_tabela: oldFormat.nome_tabela,
+          campos_selecionados: oldFormat.campos_selecionados,
+          tipo_grafico: oldFormat.tipo_grafico,
           filtros: filters,
         },
       })
@@ -49,16 +52,16 @@ function DashboardChartCard({
     return () => {
       isMounted = false
     }
-  }, [chart, filters, user])
+  }, [oldFormat, filters, user])
 
   return (
     <Card
       className="shadow-sm border-t-4"
-      style={{ borderTopColor: chart.tipo_grafico === 'pie' ? '#FF8C00' : '#0066CC' }}
+      style={{ borderTopColor: chart.type === 'pie' ? '#FF8C00' : '#0066CC' }}
     >
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold text-slate-800 line-clamp-1">
-          {chart.nome_grafico}
+          {chart.name}
         </CardTitle>
       </CardHeader>
       <CardContent className="h-[320px] pb-6">
@@ -67,7 +70,7 @@ function DashboardChartCard({
             <Loader2 className="size-6 animate-spin text-sl-blue" />
           </div>
         ) : data.length > 0 ? (
-          <ChartRenderer data={data} config={chart} />
+          <ChartRenderer data={data} config={oldFormat as any} />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-slate-400">
             Nenhum dado encontrado para os filtros atuais.
@@ -94,24 +97,15 @@ export default function DashboardViewer() {
     const fetchDashboardAndCharts = async () => {
       if (!user || !id) return
       try {
-        const { data: dashData, error: dashError } = await supabase
-          .from('dashboards' as any)
-          .select('*')
-          .eq('id', id)
-          .single()
-
-        if (dashError) throw dashError
+        const dashData = await getDashboard(id)
         setDashboard(dashData)
 
-        if (dashData?.configuracao_layout?.length > 0) {
-          const { data: chartsData, error: chartsError } = await supabase
-            .from('configuracao_graficos' as any)
-            .select('*')
-            .in('id', dashData.configuracao_layout)
+        const itemsData = await getDashboardItems(id)
+        const activeCharts = itemsData
+          .map((item) => item.expand?.chart_id)
+          .filter(Boolean) as (ChartFormData & { id: string })[]
 
-          if (chartsError) throw chartsError
-          setCharts(chartsData || [])
-        }
+        setCharts(activeCharts)
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar Dashboard',
@@ -125,26 +119,19 @@ export default function DashboardViewer() {
     fetchDashboardAndCharts()
   }, [id, user, toast])
 
-  // Extract unique filters from all charts in layout
   const globalFilters = useMemo(() => {
     if (!dashboard || charts.length === 0) return []
-    const layoutChartIds = dashboard.configuracao_layout || []
-    const activeCharts = layoutChartIds
-      .map((id) => charts.find((c) => c.id === id))
-      .filter(Boolean) as ChartFormData[]
-
     const filtersMap = new Map<string, ChartField>()
-    activeCharts.forEach((c) => {
-      ;(c.campos_selecionados || []).forEach((f: any) => {
-        if (f.is_filter && !filtersMap.has(f.field_name)) {
-          filtersMap.set(f.field_name, f)
+    charts.forEach((c) => {
+      ;(c.fields_config || []).forEach((f) => {
+        if (f.is_filter && !filtersMap.has(f.original_name)) {
+          filtersMap.set(f.original_name, f)
         }
       })
     })
     return Array.from(filtersMap.values())
   }, [dashboard, charts])
 
-  // Debounce filters
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedFilters(filterValues)
@@ -182,9 +169,11 @@ export default function DashboardViewer() {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
               <LayoutDashboard className="size-7 text-sl-blue hidden sm:block" />
-              {dashboard.nome}
+              {dashboard.name}
             </h2>
-            {dashboard.descricao && <p className="text-slate-500 mt-1">{dashboard.descricao}</p>}
+            {dashboard.description && (
+              <p className="text-slate-500 mt-1">{dashboard.description}</p>
+            )}
           </div>
         </div>
       </div>
@@ -197,15 +186,15 @@ export default function DashboardViewer() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {globalFilters.map((f) => (
-              <div key={f.field_name} className="space-y-1.5">
+              <div key={f.original_name} className="space-y-1.5">
                 <Label className="text-xs text-slate-500 uppercase tracking-wide">
-                  {f.display_label || f.field_name}
+                  {f.display_name || f.original_name}
                 </Label>
                 <Input
-                  placeholder={`Filtrar ${f.display_label || f.field_name}...`}
-                  value={filterValues[f.field_name] || ''}
+                  placeholder={`Filtrar ${f.display_name || f.original_name}...`}
+                  value={filterValues[f.original_name] || ''}
                   onChange={(e) =>
-                    setFilterValues((prev) => ({ ...prev, [f.field_name]: e.target.value }))
+                    setFilterValues((prev) => ({ ...prev, [f.original_name]: e.target.value }))
                   }
                   className="bg-slate-50 focus-visible:ring-sl-blue"
                 />
@@ -215,7 +204,7 @@ export default function DashboardViewer() {
         </div>
       )}
 
-      {!dashboard.configuracao_layout || dashboard.configuracao_layout.length === 0 ? (
+      {charts.length === 0 ? (
         <div className="text-center p-16 bg-white rounded-xl border border-dashed border-slate-300">
           <PieChart className="size-12 mx-auto text-slate-300 mb-3" />
           <h3 className="text-lg font-medium text-slate-700">Dashboard Vazio</h3>
@@ -226,13 +215,13 @@ export default function DashboardViewer() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6 mt-6">
-          {dashboard.configuracao_layout.map((chartId) => {
-            const chartConfig = charts.find((c) => c.id === chartId)
-            if (!chartConfig) return null
-            return (
-              <DashboardChartCard key={chartId} chart={chartConfig} filters={debouncedFilters} />
-            )
-          })}
+          {charts.map((chartConfig) => (
+            <DashboardChartCard
+              key={chartConfig.id}
+              chart={chartConfig}
+              filters={debouncedFilters}
+            />
+          ))}
         </div>
       )}
     </div>

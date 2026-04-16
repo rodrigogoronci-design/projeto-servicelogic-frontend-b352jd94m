@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -17,10 +16,18 @@ import {
 } from '@/components/ui/select'
 import { GripVertical, Plus, Save, ArrowLeft, Loader2, PieChart, Trash2 } from 'lucide-react'
 import { ChartFormData } from '@/types/chart'
+import { getCharts } from '@/services/charts'
+import {
+  getDashboard,
+  getDashboardItems,
+  createDashboard,
+  updateDashboard,
+  createDashboardItem,
+  deleteDashboardItem,
+} from '@/services/dashboards'
 
 export default function DashboardForm() {
   const { id } = useParams()
-  const { user } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -28,8 +35,8 @@ export default function DashboardForm() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [availableCharts, setAvailableCharts] = useState<(ChartFormData & { id: string })[]>([])
 
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [layout, setLayout] = useState<string[]>([])
   const [selectedChartToAdd, setSelectedChartToAdd] = useState('')
 
@@ -37,30 +44,18 @@ export default function DashboardForm() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return
       try {
-        // Fetch all charts
-        const { data: chartsData, error: chartsError } = await supabase
-          .from('configuracao_graficos' as any)
-          .select('*')
-          .eq('usuario_id', user.id)
-
-        if (chartsError) throw chartsError
+        const chartsData = await getCharts()
         setAvailableCharts(chartsData || [])
 
-        // If editing, fetch dashboard
         if (id) {
-          const { data: dashData, error: dashError } = await supabase
-            .from('dashboards' as any)
-            .select('*')
-            .eq('id', id)
-            .single()
-
-          if (dashError) throw dashError
+          const dashData = await getDashboard(id)
           if (dashData) {
-            setNome(dashData.nome)
-            setDescricao(dashData.descricao || '')
-            setLayout(dashData.configuracao_layout || [])
+            setName(dashData.name)
+            setDescription(dashData.description || '')
+
+            const itemsData = await getDashboardItems(id)
+            setLayout(itemsData.map((item) => item.chart_id))
           }
         }
       } catch (err: any) {
@@ -71,7 +66,7 @@ export default function DashboardForm() {
       }
     }
     fetchData()
-  }, [id, user])
+  }, [id])
 
   const handleAddChart = () => {
     if (!selectedChartToAdd) return
@@ -113,30 +108,33 @@ export default function DashboardForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !nome) return
+    if (!name) return
 
     setLoading(true)
-    const payload = {
-      usuario_id: user.id,
-      nome,
-      descricao,
-      configuracao_layout: layout,
-    }
 
     try {
-      let error
-      if (id) {
-        const res = await supabase
-          .from('dashboards' as any)
-          .update(payload)
-          .eq('id', id)
-        error = res.error
+      let dashboardId = id
+      if (dashboardId) {
+        await updateDashboard(dashboardId, { name, description })
+        const existingItems = await getDashboardItems(dashboardId)
+        for (const item of existingItems) {
+          await deleteDashboardItem(item.id)
+        }
       } else {
-        const res = await supabase.from('dashboards' as any).insert(payload)
-        error = res.error
+        const res = await createDashboard({ name, description })
+        dashboardId = res.id
       }
 
-      if (error) throw error
+      if (dashboardId) {
+        for (let i = 0; i < layout.length; i++) {
+          await createDashboardItem({
+            dashboard_id: dashboardId,
+            chart_id: layout[i],
+            sort_order: i,
+          })
+        }
+      }
+
       toast({ title: 'Sucesso', description: 'Dashboard salvo com sucesso.' })
       navigate('/app/dashboards')
     } catch (err: any) {
@@ -191,8 +189,8 @@ export default function DashboardForm() {
               <Input
                 id="nome"
                 required
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Resumo de Vendas"
                 className="focus-visible:ring-sl-blue"
               />
@@ -201,8 +199,8 @@ export default function DashboardForm() {
               <Label htmlFor="descricao">Descrição</Label>
               <Textarea
                 id="descricao"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Opcional"
                 className="resize-none focus-visible:ring-sl-blue"
                 rows={2}
@@ -229,7 +227,7 @@ export default function DashboardForm() {
                   <SelectContent>
                     {availableCharts.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.nome_grafico}
+                        {c.name}
                       </SelectItem>
                     ))}
                     {availableCharts.length === 0 && (
@@ -273,10 +271,10 @@ export default function DashboardForm() {
                       <GripVertical className="size-5 text-slate-400 shrink-0" />
                       <div className="flex-1 flex flex-col min-w-0">
                         <span className="font-medium text-sm text-slate-800 truncate">
-                          {chart?.nome_grafico || 'Gráfico Removido'}
+                          {chart?.name || 'Gráfico Removido'}
                         </span>
                         <span className="text-xs text-slate-500 truncate">
-                          Tabela: {chart?.nome_tabela || '?'}
+                          Tabela: {chart?.table_name || '?'}
                         </span>
                       </div>
                       <Button

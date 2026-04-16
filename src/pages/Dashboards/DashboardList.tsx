@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { LayoutDashboard, Plus, Trash2, Edit, Eye, Loader2, PieChart } from 'lucide-react'
+import { LayoutDashboard, Plus, Trash2, Edit, Eye, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DashboardData } from '@/types/chart'
@@ -19,47 +17,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { getDashboards, deleteDashboard } from '@/services/dashboards'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function DashboardList() {
-  const { user } = useAuth()
   const { toast } = useToast()
-  const [dashboards, setDashboards] = useState<
-    (DashboardData & { id: string; criado_em: string })[]
-  >([])
+  const [dashboards, setDashboards] = useState<(DashboardData & { id: string; created: string })[]>(
+    [],
+  )
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const fetchDashboards = async () => {
-    if (!user) return
+  const fetchDashboardsList = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('dashboards' as any)
-      .select('*')
-      .eq('usuario_id', user.id)
-      .order('criado_em', { ascending: false })
-
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' })
-    } else {
-      setDashboards(data || [])
+    try {
+      const data = await getDashboards()
+      setDashboards(data)
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
-    fetchDashboards()
-  }, [user])
+    fetchDashboardsList()
+  }, [])
+
+  useRealtime('dashboards', () => {
+    fetchDashboardsList()
+  })
 
   const handleDelete = async () => {
     if (!deleteId) return
     try {
-      const { error } = await supabase
-        .from('dashboards' as any)
-        .delete()
-        .eq('id', deleteId)
-      if (error) throw error
+      await deleteDashboard(deleteId)
       toast({ title: 'Sucesso', description: 'Dashboard excluído com sucesso.' })
-      setDashboards(dashboards.filter((d) => d.id !== deleteId))
     } catch (err: any) {
       toast({ title: 'Erro', description: err.message, variant: 'destructive' })
     } finally {
@@ -101,72 +94,61 @@ export default function DashboardList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dashboards.map((dashboard) => {
-            const chartCount = Array.isArray(dashboard.configuracao_layout)
-              ? dashboard.configuracao_layout.length
-              : 0
-
-            return (
-              <Card
-                key={dashboard.id}
-                className="flex flex-col hover:shadow-md transition-shadow border-t-4 border-t-sl-blue"
-              >
-                <CardHeader className="pb-3">
-                  <h3
-                    className="font-bold text-lg text-slate-800 line-clamp-1"
-                    title={dashboard.nome}
-                  >
-                    {dashboard.nome}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1 font-medium">
-                    <PieChart className="size-3.5" />
-                    {chartCount} {chartCount === 1 ? 'Gráfico' : 'Gráficos'} inclusos
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 pb-4">
-                  <p className="text-sm text-slate-600 line-clamp-2">
-                    {dashboard.descricao || 'Sem descrição informada.'}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-1">
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
-                      Criado em{' '}
-                      {format(new Date(dashboard.criado_em), 'dd MMM yyyy', { locale: ptBR })}
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex gap-2 border-t border-slate-100 mt-auto pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-white text-sl-blue hover:text-sl-blueLight border-slate-200"
-                    asChild
-                  >
-                    <Link to={`/app/dashboards/${dashboard.id}`}>
-                      <Eye className="size-4 mr-2" /> Visualizar
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-slate-500 hover:text-sl-orange hover:bg-orange-50"
-                    asChild
-                  >
-                    <Link to={`/app/dashboards/${dashboard.id}/editar`}>
-                      <Edit className="size-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-slate-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => setDeleteId(dashboard.id)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            )
-          })}
+          {dashboards.map((dashboard) => (
+            <Card
+              key={dashboard.id}
+              className="flex flex-col hover:shadow-md transition-shadow border-t-4 border-t-sl-blue"
+            >
+              <CardHeader className="pb-3">
+                <h3
+                  className="font-bold text-lg text-slate-800 line-clamp-1"
+                  title={dashboard.name}
+                >
+                  {dashboard.name}
+                </h3>
+              </CardHeader>
+              <CardContent className="flex-1 pb-4">
+                <p className="text-sm text-slate-600 line-clamp-2">
+                  {dashboard.description || 'Sem descrição informada.'}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-1">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                    Criado em {format(new Date(dashboard.created), 'dd MMM yyyy', { locale: ptBR })}
+                  </span>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0 flex gap-2 border-t border-slate-100 mt-auto pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-white text-sl-blue hover:text-sl-blueLight border-slate-200"
+                  asChild
+                >
+                  <Link to={`/app/dashboards/${dashboard.id}`}>
+                    <Eye className="size-4 mr-2" /> Visualizar
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-500 hover:text-sl-orange hover:bg-orange-50"
+                  asChild
+                >
+                  <Link to={`/app/dashboards/${dashboard.id}/editar`}>
+                    <Edit className="size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={() => setDeleteId(dashboard.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
       )}
 

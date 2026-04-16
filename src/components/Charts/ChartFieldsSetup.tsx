@@ -25,46 +25,42 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
       columns.find((c) => c.name === colName)?.type.includes('numeric')
 
     const newField: ChartField = {
-      field_name: colName,
+      original_name: colName,
       type: isNumeric ? 'metric' : 'dimension',
       axis: isNumeric ? 'vertical' : 'horizontal',
       aggregation: isNumeric ? 'sum' : undefined,
-      display_label: colName,
+      display_name: colName,
       color: isNumeric ? '#0066CC' : '#FF8C00',
       is_filter: false,
     }
 
     setFormData((prev: ChartFormData) => ({
       ...prev,
-      campos_selecionados: [...prev.campos_selecionados, newField],
+      fields_config: [...prev.fields_config, newField],
     }))
   }
 
   const handleUpdateField = (index: number, updated: ChartField) => {
     setFormData((prev: ChartFormData) => {
-      const newFields = [...prev.campos_selecionados]
+      const newFields = [...prev.fields_config]
       newFields[index] = updated
-      return { ...prev, campos_selecionados: newFields }
+      return { ...prev, fields_config: newFields }
     })
   }
 
   const handleRemoveField = (index: number) => {
     setFormData((prev: ChartFormData) => {
-      const newFields = [...prev.campos_selecionados]
+      const newFields = [...prev.fields_config]
       newFields.splice(index, 1)
-      return { ...prev, campos_selecionados: newFields }
+      return { ...prev, fields_config: newFields }
     })
   }
 
   const availableCols = columns.filter(
-    (c) =>
-      !formData.campos_selecionados.some((f: any) => {
-        const fname = typeof f === 'string' ? f : f.field_name
-        return fname === c.name
-      }),
+    (c) => !formData.fields_config.some((f) => f.original_name === c.name),
   )
 
-  if (!formData.nome_tabela) {
+  if (!formData.table_name) {
     return (
       <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 text-center text-slate-500 italic">
         Selecione uma tabela origem para configurar o mapeamento dos campos.
@@ -101,32 +97,19 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
       </div>
 
       <div className="space-y-4">
-        {formData.campos_selecionados.length === 0 ? (
+        {formData.fields_config.length === 0 ? (
           <div className="p-8 bg-white rounded-xl border-2 border-dashed border-slate-200 text-center text-sm text-slate-400">
             Nenhum campo adicionado. Selecione um campo acima para iniciar a configuração.
           </div>
         ) : (
-          formData.campos_selecionados.map((field, idx) => {
-            const f =
-              typeof field === 'string'
-                ? ({
-                    field_name: field,
-                    type: 'metric',
-                    axis: 'vertical',
-                    display_label: field,
-                    color: '#FF8C00',
-                    is_filter: false,
-                  } as ChartField)
-                : field
-            return (
-              <ChartFieldRow
-                key={f.field_name}
-                field={f}
-                onChange={(upd) => handleUpdateField(idx, upd)}
-                onRemove={() => handleRemoveField(idx)}
-              />
-            )
-          })
+          formData.fields_config.map((field, idx) => (
+            <ChartFieldRow
+              key={field.original_name}
+              field={field}
+              onChange={(upd) => handleUpdateField(idx, upd)}
+              onRemove={() => handleRemoveField(idx)}
+            />
+          ))
         )}
       </div>
     </div>

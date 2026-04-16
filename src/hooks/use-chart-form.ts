@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { ChartFormData, ChartField } from '@/types/chart'
+import { getChart, createChart, updateChart } from '@/services/charts'
 
 export function useChartForm(id?: string) {
   const { user } = useAuth()
@@ -18,11 +19,11 @@ export function useChartForm(id?: string) {
   const [userEditedDesc, setUserEditedDesc] = useState(false)
 
   const [formData, setFormData] = useState<ChartFormData>({
-    nome_grafico: '',
-    nome_tabela: '',
-    campos_selecionados: [],
-    tipo_grafico: 'bar',
-    descricao: '',
+    name: '',
+    table_name: '',
+    fields_config: [],
+    type: 'bar',
+    description: '',
   })
 
   useEffect(() => {
@@ -48,14 +49,14 @@ export function useChartForm(id?: string) {
 
   useEffect(() => {
     const fetchColumns = async () => {
-      if (!user || !formData.nome_tabela) {
+      if (!user || !formData.table_name) {
         setColumns([])
         return
       }
       setLoadingSchema(true)
       try {
         const { data: res, error } = await supabase.functions.invoke('get-sql-tables', {
-          body: { action: 'get_columns', table_name: formData.nome_tabela, usuario_id: user.id },
+          body: { action: 'get_columns', table_name: formData.table_name, usuario_id: user.id },
         })
         if (error) throw error
         if (res.error) throw new Error(res.error)
@@ -66,9 +67,7 @@ export function useChartForm(id?: string) {
         const newColNames = fetchedCols.map((c: any) => c.name)
         setFormData((prev) => ({
           ...prev,
-          campos_selecionados: prev.campos_selecionados.filter((f) =>
-            newColNames.includes(f.field_name),
-          ),
+          fields_config: prev.fields_config.filter((f) => newColNames.includes(f.original_name)),
         }))
       } catch (err: any) {
         toast({
@@ -81,33 +80,16 @@ export function useChartForm(id?: string) {
       }
     }
     fetchColumns()
-  }, [formData.nome_tabela, user, toast])
+  }, [formData.table_name, user, toast])
 
   useEffect(() => {
     const fetchConfig = async () => {
       if (!id || !user) return
       try {
-        const { data, error } = await supabase
-          .from('configuracao_graficos' as any)
-          .select('*')
-          .eq('id', id)
-          .single()
-
-        if (error) throw error
+        const data = await getChart(id)
         if (data) {
-          const loadedCampos = data.campos_selecionados || []
-          const normalizedCampos = loadedCampos.map((c: any, i: number) => {
-            if (typeof c === 'string') {
-              return {
-                field_name: c,
-                axis: i === 0 ? 'horizontal' : 'vertical',
-                type: i === 0 ? 'dimension' : 'metric',
-                aggregation: i === 0 ? undefined : 'sum',
-                display_label: c,
-                color: i === 0 ? '#0066CC' : '#FF8C00',
-                is_filter: false,
-              }
-            }
+          const loadedCampos = data.fields_config || []
+          const normalizedCampos = loadedCampos.map((c: any) => {
             return {
               ...c,
               is_filter: c.is_filter || false,
@@ -115,13 +97,13 @@ export function useChartForm(id?: string) {
           })
 
           setFormData({
-            nome_grafico: data.nome_grafico,
-            nome_tabela: data.nome_tabela,
-            campos_selecionados: normalizedCampos,
-            tipo_grafico: data.tipo_grafico,
-            descricao: data.descricao || '',
+            name: data.name,
+            table_name: data.table_name,
+            fields_config: normalizedCampos,
+            type: data.type,
+            description: data.description || '',
           })
-          if (data.descricao) setUserEditedDesc(true)
+          if (data.description) setUserEditedDesc(true)
         }
       } catch (err: any) {
         toast({ title: 'Erro', description: 'Gráfico não encontrado.', variant: 'destructive' })
@@ -134,33 +116,27 @@ export function useChartForm(id?: string) {
   }, [id, user, navigate, toast])
 
   const generatedDescription = useMemo(() => {
-    const typeLabel = formData.tipo_grafico || 'barra'
-    const table = formData.nome_tabela || 'uma tabela'
+    const typeLabel = formData.type || 'barra'
+    const table = formData.table_name || 'uma tabela'
     const fields =
-      formData.campos_selecionados.length > 0
-        ? formData.campos_selecionados
-            .map((f) => f.display_label)
+      formData.fields_config.length > 0
+        ? formData.fields_config
+            .map((f) => f.display_name)
             .join(', ')
             .replace(/, ([^,]*)$/, ' e $1')
         : 'dados gerais'
     return `Gráfico de ${typeLabel} comparando ${fields} da tabela ${table}.`
-  }, [formData.tipo_grafico, formData.nome_tabela, formData.campos_selecionados])
+  }, [formData.type, formData.table_name, formData.fields_config])
 
   useEffect(() => {
-    if (!userEditedDesc && (formData.nome_tabela || formData.campos_selecionados.length > 0)) {
-      setFormData((prev) => ({ ...prev, descricao: generatedDescription }))
+    if (!userEditedDesc && (formData.table_name || formData.fields_config.length > 0)) {
+      setFormData((prev) => ({ ...prev, description: generatedDescription }))
     }
-  }, [
-    generatedDescription,
-    userEditedDesc,
-    formData.nome_tabela,
-    formData.campos_selecionados.length,
-  ])
+  }, [generatedDescription, userEditedDesc, formData.table_name, formData.fields_config.length])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
-    if (!formData.nome_grafico || !formData.nome_tabela || !formData.tipo_grafico) {
+    if (!formData.name || !formData.table_name || !formData.type) {
       return toast({
         title: 'Atenção',
         description: 'Preencha os campos obrigatórios.',
@@ -169,22 +145,14 @@ export function useChartForm(id?: string) {
     }
 
     setLoading(true)
-    const payload = { usuario_id: user.id, ...formData }
 
     try {
-      let error
       if (id) {
-        const res = await supabase
-          .from('configuracao_graficos' as any)
-          .update(payload)
-          .eq('id', id)
-        error = res.error
+        await updateChart(id, formData)
       } else {
-        const res = await supabase.from('configuracao_graficos' as any).insert(payload)
-        error = res.error
+        await createChart(formData)
       }
 
-      if (error) throw error
       toast({ title: 'Sucesso', description: 'Configuração salva com sucesso.' })
       navigate('/app/graficos')
     } catch (err: any) {
