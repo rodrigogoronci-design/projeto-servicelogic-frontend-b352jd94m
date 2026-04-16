@@ -21,11 +21,11 @@ import { Settings, Activity, BarChart3, PieChart, LayoutDashboard } from 'lucide
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard SQL', href: '/app', icon: BarChart3, exact: true },
-  { name: 'Meus Dashboards', href: '/app/dashboards', icon: LayoutDashboard, exact: false },
-  { name: 'Meus Gráficos', href: '/app/graficos', icon: PieChart, exact: false },
-  { name: 'Logs & Monitoramento', href: '/app/logs', icon: Activity, exact: false },
-  { name: 'Configurações', href: '/app/credenciais', icon: Settings, exact: false },
+  { name: 'Dashboard SQL', href: '/', icon: BarChart3, exact: true },
+  { name: 'Meus Dashboards', href: '/dashboards', icon: LayoutDashboard, exact: false },
+  { name: 'Meus Gráficos', href: '/graficos', icon: PieChart, exact: false },
+  { name: 'Logs & Monitoramento', href: '/logs', icon: Activity, exact: false },
+  { name: 'Configurações', href: '/credenciais', icon: Settings, exact: false },
 ]
 
 function AppSidebar() {
