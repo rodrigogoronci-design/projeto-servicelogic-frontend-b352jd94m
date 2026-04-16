@@ -4,57 +4,60 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { KeyRound, Save, Link as LinkIcon, Loader2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/use-auth'
+import { KeyRound, Save, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { getCredentials, saveCredentials, testConnection } from '@/services/credentials'
+import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
 
 function SqlServerCreds() {
   const { toast } = useToast()
-  const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const [formData, setFormData] = useState({
-    server_ip: '',
-    database_name: '',
+    host: '',
+    port: '',
+    database: '',
     username: '',
-    password_encrypted: '',
-    table_name: 'DWBI_PBIv2_Conhecimento',
+    password: '',
   })
 
   useEffect(() => {
+    let mounted = true
     const fetchCreds = async () => {
-      if (!user) return
       try {
-        const { data } = await supabase
-          .from('credenciais_sql_server' as any)
-          .select('*')
-          .eq('usuario_id', user.id)
-          .maybeSingle()
-
-        if (data) {
+        const data = await getCredentials()
+        if (mounted && data) {
           setFormData({
-            server_ip: data.server_ip,
-            database_name: data.database_name,
-            username: data.username,
-            password_encrypted: data.password_encrypted,
-            table_name: data.table_name,
+            host: data.host || '',
+            port: data.port || '',
+            database: data.database || '',
+            username: data.username || '',
+            password: data.password || '',
           })
         }
+      } catch (err) {
+        console.error('Failed to load credentials:', err)
       } finally {
-        setIsLoading(false)
+        if (mounted) setIsLoading(false)
       }
     }
     fetchCreds()
-  }, [user])
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleTest = async () => {
     if (
-      !formData.server_ip ||
-      !formData.database_name ||
+      !formData.host ||
+      !formData.port ||
+      !formData.database ||
       !formData.username ||
-      !formData.password_encrypted
+      !formData.password
     ) {
       return toast({
         title: 'Atenção',
@@ -62,19 +65,22 @@ function SqlServerCreds() {
         variant: 'destructive',
       })
     }
+
     setIsTesting(true)
+    setTestResult(null)
+
     try {
-      const { data, error } = await supabase.functions.invoke('test-sql-connection', {
-        body: { ...formData, usuario_id: user?.id },
-      })
-      if (error || data?.error) throw new Error(error?.message || data?.error)
+      await testConnection(formData)
+      setTestResult({ success: true, message: 'Conexão estabelecida com sucesso!' })
       toast({
         title: 'Sucesso!',
         description: 'Conexão com SQL Server estabelecida.',
-        className: 'bg-emerald-50 border-emerald-200',
+        className: 'bg-emerald-50 border-emerald-200 text-emerald-900',
       })
     } catch (err: any) {
-      toast({ title: 'Falha na Conexão', description: err.message, variant: 'destructive' })
+      const msg = getErrorMessage(err)
+      setTestResult({ success: false, message: msg || 'Erro de Conexão' })
+      toast({ title: 'Falha na Conexão', description: msg, variant: 'destructive' })
     } finally {
       setIsTesting(false)
     }
@@ -82,41 +88,27 @@ function SqlServerCreds() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
     setIsSubmitting(true)
+    setFieldErrors({})
+    setTestResult(null)
 
     try {
-      const { data: existing } = await supabase
-        .from('credenciais_sql_server' as any)
-        .select('id')
-        .eq('usuario_id', user.id)
-        .maybeSingle()
-
-      const payload = {
-        usuario_id: user.id,
-        ...formData,
-        updated_at: new Date().toISOString(),
-      }
-
-      let error
-      if (existing) {
-        const res = await supabase
-          .from('credenciais_sql_server' as any)
-          .update(payload)
-          .eq('id', existing.id)
-        error = res.error
-      } else {
-        const res = await supabase.from('credenciais_sql_server' as any).insert(payload)
-        error = res.error
-      }
-
-      if (error) throw error
+      await saveCredentials(formData)
       toast({
         title: 'Credenciais Atualizadas',
         description: 'Acesso ao banco SQL Server salvo com sucesso.',
       })
     } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
+      const errs = extractFieldErrors(error)
+      if (Object.keys(errs).length > 0) {
+        setFieldErrors(errs)
+      } else {
+        toast({
+          title: 'Erro ao salvar',
+          description: getErrorMessage(error),
+          variant: 'destructive',
+        })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -137,75 +129,106 @@ function SqlServerCreds() {
           </div>
         ) : (
           <>
+            {testResult && (
+              <Alert
+                variant={testResult.success ? 'default' : 'destructive'}
+                className={
+                  testResult.success ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : ''
+                }
+              >
+                <AlertCircle className={`size-4 ${testResult.success ? 'text-emerald-600' : ''}`} />
+                <AlertTitle>{testResult.success ? 'Sucesso' : 'Erro de Conexão'}</AlertTitle>
+                <AlertDescription>{testResult.message}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="server_ip">
-                  IP do Servidor <span className="text-red-500">*</span>
+                <Label htmlFor="host">
+                  Host (IP/URL) <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="server_ip"
+                  id="host"
                   required
                   placeholder="ex: 192.168.1.100"
-                  value={formData.server_ip}
-                  onChange={(e) => setFormData({ ...formData, server_ip: e.target.value })}
+                  value={formData.host}
+                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                  className={fieldErrors.host ? 'border-red-500' : ''}
                 />
+                {fieldErrors.host && <p className="text-xs text-red-500">{fieldErrors.host}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="database_name">
+                <Label htmlFor="port">
+                  Porta <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="port"
+                  required
+                  placeholder="ex: 1433"
+                  value={formData.port}
+                  onChange={(e) => setFormData({ ...formData, port: e.target.value })}
+                  className={fieldErrors.port ? 'border-red-500' : ''}
+                />
+                {fieldErrors.port && <p className="text-xs text-red-500">{fieldErrors.port}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="database">
                   Nome do Database <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="database_name"
+                  id="database"
                   required
                   placeholder="ex: BD_PRODUCAO"
-                  value={formData.database_name}
-                  onChange={(e) => setFormData({ ...formData, database_name: e.target.value })}
+                  value={formData.database}
+                  onChange={(e) => setFormData({ ...formData, database: e.target.value })}
+                  className={fieldErrors.database ? 'border-red-500' : ''}
                 />
+                {fieldErrors.database && (
+                  <p className="text-xs text-red-500">{fieldErrors.database}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sql_username">
-                  Usuário (SQL Login) <span className="text-red-500">*</span>
+                <Label htmlFor="username">
+                  Usuário <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="sql_username"
+                  id="username"
                   required
                   placeholder="ex: sa"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  className={fieldErrors.username ? 'border-red-500' : ''}
                 />
+                {fieldErrors.username && (
+                  <p className="text-xs text-red-500">{fieldErrors.username}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sql_password">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="password">
                   Senha <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="sql_password"
+                  id="password"
                   type="password"
                   required
                   placeholder="••••••••"
-                  value={formData.password_encrypted}
-                  onChange={(e) => setFormData({ ...formData, password_encrypted: e.target.value })}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={fieldErrors.password ? 'border-red-500' : ''}
                 />
+                {fieldErrors.password && (
+                  <p className="text-xs text-red-500">{fieldErrors.password}</p>
+                )}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="table_name">
-                Nome da Tabela de Fatos <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="table_name"
-                required
-                value={formData.table_name}
-                onChange={(e) => setFormData({ ...formData, table_name: e.target.value })}
-              />
-            </div>
+
             <div className="pt-4 border-t flex flex-col-reverse sm:flex-row justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleTest}
                 disabled={isTesting || isSubmitting}
-                className="gap-2 border-sl-blue text-sl-blue hover:bg-blue-50"
+                className="gap-2 border-slate-200 hover:bg-slate-50"
               >
                 {isTesting ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -219,7 +242,11 @@ function SqlServerCreds() {
                 disabled={isSubmitting || isTesting}
                 className="gap-2 bg-sl-orange hover:bg-sl-orangeLight text-white shadow-md"
               >
-                <Save className="size-4" />
+                {isSubmitting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Save className="size-4" />
+                )}
                 {isSubmitting ? 'Salvando...' : 'Salvar Credenciais'}
               </Button>
             </div>
