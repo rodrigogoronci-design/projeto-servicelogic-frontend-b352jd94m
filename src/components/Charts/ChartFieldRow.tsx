@@ -1,4 +1,4 @@
-import { ChartField } from '@/types/chart'
+import { ChartMapping } from '@/types/chart'
 import {
   Select,
   SelectContent,
@@ -8,14 +8,13 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Trash2 } from 'lucide-react'
 import { ColorPicker } from './ColorPicker'
 
 interface ChartFieldRowProps {
-  field: ChartField
-  onChange: (f: ChartField) => void
+  field: ChartMapping
+  onChange: (f: ChartMapping) => void
   onRemove: () => void
 }
 
@@ -28,7 +27,7 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
             Campo Original:
           </span>
           <span className="font-mono text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded">
-            {field.original_name}
+            {field.field}
           </span>
         </div>
         <Button
@@ -47,8 +46,8 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
         <div className="space-y-2 lg:col-span-2">
           <Label className="text-xs text-slate-500">Label de Exibição (Display Name)</Label>
           <Input
-            value={field.display_name}
-            onChange={(e) => onChange({ ...field, display_name: e.target.value })}
+            value={field.label}
+            onChange={(e) => onChange({ ...field, label: e.target.value })}
             placeholder="Nome amigável"
             className="h-9 focus-visible:ring-sl-blue"
           />
@@ -108,20 +107,6 @@ export function ChartFieldRow({ field, onChange, onRemove }: ChartFieldRowProps)
         <div className="space-y-2 flex flex-col justify-end">
           <div className="flex items-center gap-3 h-9">
             <ColorPicker color={field.color} onChange={(c) => onChange({ ...field, color: c })} />
-            <div className="flex items-center space-x-2 border border-slate-200 px-3 h-9 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors w-full cursor-pointer">
-              <Checkbox
-                id={`filter-${field.original_name}`}
-                checked={field.is_filter}
-                onCheckedChange={(c) => onChange({ ...field, is_filter: !!c })}
-                className="data-[state=checked]:bg-sl-blue data-[state=checked]:border-sl-blue"
-              />
-              <label
-                htmlFor={`filter-${field.original_name}`}
-                className="text-xs font-medium leading-none cursor-pointer select-none flex-1 py-2 text-slate-700"
-              >
-                Usar como Filtro
-              </label>
-            </div>
           </div>
         </div>
       </div>

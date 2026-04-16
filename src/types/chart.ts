@@ -1,11 +1,21 @@
-export interface ChartField {
-  original_name: string
-  display_name: string
+export interface ChartMapping {
+  field: string
+  label: string
+  color: string
   axis: 'horizontal' | 'vertical'
   type: 'dimension' | 'metric'
   aggregation?: 'sum' | 'avg' | 'count' | 'min' | 'max'
-  color: string
-  is_filter: boolean
+}
+
+export interface ChartFilter {
+  field: string
+  operator: string
+  value: string | number
+}
+
+export interface ChartFieldsConfig {
+  mappings: ChartMapping[]
+  filters: ChartFilter[]
 }
 
 export interface ChartFormData {
@@ -14,7 +24,7 @@ export interface ChartFormData {
   table_name: string
   type: string
   description?: string
-  fields_config: ChartField[]
+  fields_config: ChartFieldsConfig
 }
 
 export interface DashboardData {
@@ -53,19 +63,22 @@ export interface OldChartFormData {
 }
 
 export function mapToOldFormat(chart: ChartFormData): OldChartFormData {
+  const config = chart.fields_config || { mappings: [], filters: [] }
+  const mappings = Array.isArray(config) ? config : config.mappings || []
+
   return {
     nome_grafico: chart.name || '',
     nome_tabela: chart.table_name || '',
     tipo_grafico: chart.type || 'bar',
     descricao: chart.description || '',
-    campos_selecionados: (chart.fields_config || []).map((f) => ({
-      field_name: f.original_name,
-      display_label: f.display_name,
-      axis: f.axis,
-      type: f.type,
-      aggregation: f.aggregation,
-      color: f.color,
-      is_filter: f.is_filter,
+    campos_selecionados: mappings.map((m: any) => ({
+      field_name: m.field || m.original_name,
+      display_label: m.label || m.display_name,
+      axis: m.axis || 'horizontal',
+      type: m.type || 'dimension',
+      aggregation: m.aggregation,
+      color: m.color || '#000000',
+      is_filter: false,
     })),
   }
 }

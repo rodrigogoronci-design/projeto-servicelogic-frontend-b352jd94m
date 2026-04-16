@@ -16,6 +16,7 @@ import { useChartForm } from '@/hooks/use-chart-form'
 import { ChartTypeSelector } from '@/components/Charts/ChartTypeSelector'
 import { ChartFieldsSetup } from '@/components/Charts/ChartFieldsSetup'
 import { ChartLivePreview } from '@/components/Charts/ChartLivePreview'
+import { ChartGlobalFilters } from '@/components/Charts/ChartGlobalFilters'
 import { mapToOldFormat } from '@/types/chart'
 
 export default function ChartForm() {
@@ -96,7 +97,11 @@ export default function ChartForm() {
                 <Select
                   value={formData.table_name}
                   onValueChange={(val) =>
-                    setFormData({ ...formData, table_name: val, fields_config: [] })
+                    setFormData({
+                      ...formData,
+                      table_name: val,
+                      fields_config: { mappings: [], filters: [] },
+                    })
                   }
                 >
                   <SelectTrigger className="bg-slate-50 focus:bg-white transition-colors focus:ring-sl-blue">
@@ -171,11 +176,20 @@ export default function ChartForm() {
           </CardContent>
         </Card>
 
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-6">
+              <Label className="text-lg font-semibold text-slate-800">Filtros Globais</Label>
+            </div>
+            <ChartGlobalFilters columns={columns} formData={formData} setFormData={setFormData} />
+          </CardContent>
+        </Card>
+
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
             <CardTitle className="flex items-center justify-between text-lg">
               Prévia do Gráfico
-              {formData.fields_config.length > 0 && (
+              {formData.fields_config.mappings.length > 0 && (
                 <span className="flex h-3 w-3 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>

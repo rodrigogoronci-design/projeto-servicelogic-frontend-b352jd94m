@@ -1,4 +1,4 @@
-import { ChartFormData, ChartField } from '@/types/chart'
+import { ChartFormData, ChartMapping } from '@/types/chart'
 import {
   Select,
   SelectContent,
@@ -24,40 +24,42 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
       columns.find((c) => c.name === colName)?.type.includes('float') ||
       columns.find((c) => c.name === colName)?.type.includes('numeric')
 
-    const newField: ChartField = {
-      original_name: colName,
+    const newMapping: ChartMapping = {
+      field: colName,
+      label: colName,
       type: isNumeric ? 'metric' : 'dimension',
       axis: isNumeric ? 'vertical' : 'horizontal',
       aggregation: isNumeric ? 'sum' : undefined,
-      display_name: colName,
       color: isNumeric ? '#0066CC' : '#FF8C00',
-      is_filter: false,
     }
 
     setFormData((prev: ChartFormData) => ({
       ...prev,
-      fields_config: [...prev.fields_config, newField],
+      fields_config: {
+        ...prev.fields_config,
+        mappings: [...prev.fields_config.mappings, newMapping],
+      },
     }))
   }
 
-  const handleUpdateField = (index: number, updated: ChartField) => {
+  const handleUpdateField = (index: number, updated: ChartMapping) => {
     setFormData((prev: ChartFormData) => {
-      const newFields = [...prev.fields_config]
-      newFields[index] = updated
-      return { ...prev, fields_config: newFields }
+      const newMappings = [...prev.fields_config.mappings]
+      newMappings[index] = updated
+      return { ...prev, fields_config: { ...prev.fields_config, mappings: newMappings } }
     })
   }
 
   const handleRemoveField = (index: number) => {
     setFormData((prev: ChartFormData) => {
-      const newFields = [...prev.fields_config]
-      newFields.splice(index, 1)
-      return { ...prev, fields_config: newFields }
+      const newMappings = [...prev.fields_config.mappings]
+      newMappings.splice(index, 1)
+      return { ...prev, fields_config: { ...prev.fields_config, mappings: newMappings } }
     })
   }
 
   const availableCols = columns.filter(
-    (c) => !formData.fields_config.some((f) => f.original_name === c.name),
+    (c) => !formData.fields_config.mappings.some((f) => f.field === c.name),
   )
 
   if (!formData.table_name) {
@@ -74,7 +76,7 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
         <div>
           <h3 className="font-semibold text-slate-800">Mapeamento de Campos</h3>
           <p className="text-sm text-slate-500">
-            Defina quais campos compõem o gráfico e configure suas cores, labels e filtros globais.
+            Defina quais campos compõem o gráfico e configure suas cores e labels.
           </p>
         </div>
         <Select onValueChange={handleAddField} value="">
@@ -97,15 +99,15 @@ export function ChartFieldsSetup({ columns, formData, setFormData }: ChartFields
       </div>
 
       <div className="space-y-4">
-        {formData.fields_config.length === 0 ? (
+        {formData.fields_config.mappings.length === 0 ? (
           <div className="p-8 bg-white rounded-xl border-2 border-dashed border-slate-200 text-center text-sm text-slate-400">
             Nenhum campo adicionado. Selecione um campo acima para iniciar a configuração.
           </div>
         ) : (
-          formData.fields_config.map((field, idx) => (
+          formData.fields_config.mappings.map((mapping, idx) => (
             <ChartFieldRow
-              key={field.original_name}
-              field={field}
+              key={mapping.field}
+              field={mapping}
               onChange={(upd) => handleUpdateField(idx, upd)}
               onRemove={() => handleRemoveField(idx)}
             />

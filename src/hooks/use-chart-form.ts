@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
-import { ChartFormData, ChartField } from '@/types/chart'
+import { ChartFormData, ChartFieldsConfig, mapToOldFormat } from '@/types/chart'
 import { getChart, createChart, updateChart } from '@/services/charts'
 
 export function useChartForm(id?: string) {
@@ -24,7 +24,7 @@ export function useChartForm(id?: string) {
   const [formData, setFormData] = useState<ChartFormData>({
     name: '',
     table_name: 'DWBI_PBIv2_Conhecimento',
-    fields_config: [],
+    fields_config: { mappings: [], filters: [] },
     type: 'bar',
     description: '',
   })
@@ -43,23 +43,15 @@ export function useChartForm(id?: string) {
         })
         if (res.error) throw new Error(res.error)
 
-        // Filter out all tables except the required one
         const allTables = res.data.map((t: any) => t.table_name)
         const targetTable = 'DWBI_PBIv2_Conhecimento'
         setTables(allTables.includes(targetTable) ? [targetTable] : [targetTable])
       } catch (err: any) {
-        toast({
-          title: 'Erro ao carregar tabelas',
-          description:
-            err.response?.error || err.message || 'Falha ao buscar tabelas do SQL Server',
-          variant: 'destructive',
-        })
-        // Fallback to the specific table even if the request fails
         setTables(['DWBI_PBIv2_Conhecimento'])
       }
     }
     fetchTables()
-  }, [user, toast])
+  }, [user])
 
   useEffect(() => {
     const fetchColumns = async () => {
@@ -69,13 +61,13 @@ export function useChartForm(id?: string) {
       }
       setLoadingSchema(true)
       try {
-        const res = await pb.send('/backend/v1/get-sql-tables', {
+        const res = await pb.send('/backend/v1/get-table-columns', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: pb.authStore.token ? `Bearer ${pb.authStore.token}` : '',
           },
-          body: JSON.stringify({ action: 'get_columns', table_name: formData.table_name }),
+          body: JSON.stringify({ table_name: formData.table_name }),
         })
         if (res.error) throw new Error(res.error)
 
@@ -85,13 +77,15 @@ export function useChartForm(id?: string) {
         const newColNames = fetchedCols.map((c: any) => c.name)
         setFormData((prev) => ({
           ...prev,
-          fields_config: prev.fields_config.filter((f) => newColNames.includes(f.original_name)),
+          fields_config: {
+            ...prev.fields_config,
+            mappings: prev.fields_config.mappings.filter((f) => newColNames.includes(f.field)),
+          },
         }))
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar colunas',
-          description:
-            err.response?.error || err.message || 'Falha ao buscar colunas do SQL Server',
+          description: err.response?.error || err.message || 'Falha ao buscar colunas',
           variant: 'destructive',
         })
       } finally {
@@ -107,18 +101,31 @@ export function useChartForm(id?: string) {
       try {
         const data = await getChart(id)
         if (data) {
-          const loadedCampos = data.fields_config || []
-          const normalizedCampos = loadedCampos.map((c: any) => {
-            return {
-              ...c,
-              is_filter: c.is_filter || false,
+          const loadedCampos = data.fields_config || { mappings: [], filters: [] }
+          let normalizedConfig: ChartFieldsConfig
+
+          if (Array.isArray(loadedCampos)) {
+            normalizedConfig = {
+              mappings: loadedCampos.map((c: any) => ({
+                field: c.original_name || c.field || '',
+                label: c.display_name || c.label || '',
+                color: c.color || '#000000',
+                axis: c.axis || 'horizontal',
+                type: c.type || 'dimension',
+                aggregation: c.aggregation,
+              })),
+              filters: [],
             }
-          })
+          } else {
+            normalizedConfig = loadedCampos as ChartFieldsConfig
+            if (!normalizedConfig.mappings) normalizedConfig.mappings = []
+            if (!normalizedConfig.filters) normalizedConfig.filters = []
+          }
 
           setFormData({
             name: data.name,
             table_name: 'DWBI_PBIv2_Conhecimento',
-            fields_config: normalizedCampos,
+            fields_config: normalizedConfig,
             type: data.type,
             description: data.description || '',
           })
@@ -138,23 +145,28 @@ export function useChartForm(id?: string) {
     const typeLabel = formData.type || 'barra'
     const table = formData.table_name || 'uma tabela'
     const fields =
-      formData.fields_config.length > 0
-        ? formData.fields_config
-            .map((f) => f.display_name)
+      formData.fields_config.mappings.length > 0
+        ? formData.fields_config.mappings
+            .map((f) => f.label)
             .join(', ')
             .replace(/, ([^,]*)$/, ' e $1')
         : 'dados gerais'
     return `Gráfico de ${typeLabel} comparando ${fields} da tabela ${table}.`
-  }, [formData.type, formData.table_name, formData.fields_config])
+  }, [formData.type, formData.table_name, formData.fields_config.mappings])
 
   useEffect(() => {
-    if (!userEditedDesc && (formData.table_name || formData.fields_config.length > 0)) {
+    if (!userEditedDesc && (formData.table_name || formData.fields_config.mappings.length > 0)) {
       setFormData((prev) => ({ ...prev, description: generatedDescription }))
     }
-  }, [generatedDescription, userEditedDesc, formData.table_name, formData.fields_config.length])
+  }, [
+    generatedDescription,
+    userEditedDesc,
+    formData.table_name,
+    formData.fields_config.mappings.length,
+  ])
 
   const fetchPreview = async () => {
-    if (!formData.table_name || formData.fields_config.length === 0) {
+    if (!formData.table_name || formData.fields_config.mappings.length === 0) {
       toast({
         title: 'Atenção',
         description: 'Selecione uma tabela e configure os campos para ver a prévia.',
@@ -173,7 +185,7 @@ export function useChartForm(id?: string) {
         },
         body: JSON.stringify({
           nome_tabela: formData.table_name,
-          campos_selecionados: formData.fields_config,
+          campos_selecionados: mapToOldFormat(formData).campos_selecionados,
         }),
       })
 
@@ -194,13 +206,21 @@ export function useChartForm(id?: string) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Ensure the specific table is always saved to PocketBase
     const finalFormData = { ...formData, table_name: 'DWBI_PBIv2_Conhecimento' }
 
     if (!finalFormData.name || !finalFormData.table_name || !finalFormData.type) {
       return toast({
         title: 'Atenção',
         description: 'Preencha os campos obrigatórios.',
+        variant: 'destructive',
+      })
+    }
+
+    const hasEmptyLabels = finalFormData.fields_config.mappings.some((m) => !m.label.trim())
+    if (hasEmptyLabels) {
+      return toast({
+        title: 'Atenção',
+        description: 'Os labels de exibição não podem estar vazios.',
         variant: 'destructive',
       })
     }
