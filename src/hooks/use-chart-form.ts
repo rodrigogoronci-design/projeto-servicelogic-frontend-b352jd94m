@@ -23,7 +23,7 @@ export function useChartForm(id?: string) {
 
   const [formData, setFormData] = useState<ChartFormData>({
     name: '',
-    table_name: '',
+    table_name: 'DWBI_PBIv2_Conhecimento',
     fields_config: [],
     type: 'bar',
     description: '',
@@ -42,7 +42,11 @@ export function useChartForm(id?: string) {
           body: JSON.stringify({ action: 'get_tables' }),
         })
         if (res.error) throw new Error(res.error)
-        setTables(res.data.map((t: any) => t.table_name))
+
+        // Filter out all tables except the required one
+        const allTables = res.data.map((t: any) => t.table_name)
+        const targetTable = 'DWBI_PBIv2_Conhecimento'
+        setTables(allTables.includes(targetTable) ? [targetTable] : [targetTable])
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar tabelas',
@@ -50,6 +54,8 @@ export function useChartForm(id?: string) {
             err.response?.error || err.message || 'Falha ao buscar tabelas do SQL Server',
           variant: 'destructive',
         })
+        // Fallback to the specific table even if the request fails
+        setTables(['DWBI_PBIv2_Conhecimento'])
       }
     }
     fetchTables()
@@ -111,7 +117,7 @@ export function useChartForm(id?: string) {
 
           setFormData({
             name: data.name,
-            table_name: data.table_name,
+            table_name: 'DWBI_PBIv2_Conhecimento',
             fields_config: normalizedCampos,
             type: data.type,
             description: data.description || '',
@@ -187,7 +193,11 @@ export function useChartForm(id?: string) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.table_name || !formData.type) {
+
+    // Ensure the specific table is always saved to PocketBase
+    const finalFormData = { ...formData, table_name: 'DWBI_PBIv2_Conhecimento' }
+
+    if (!finalFormData.name || !finalFormData.table_name || !finalFormData.type) {
       return toast({
         title: 'Atenção',
         description: 'Preencha os campos obrigatórios.',
@@ -199,9 +209,9 @@ export function useChartForm(id?: string) {
 
     try {
       if (id) {
-        await updateChart(id, formData)
+        await updateChart(id, finalFormData)
       } else {
-        await createChart(formData)
+        await createChart(finalFormData)
       }
 
       toast({ title: 'Sucesso', description: 'Configuração salva com sucesso.' })
