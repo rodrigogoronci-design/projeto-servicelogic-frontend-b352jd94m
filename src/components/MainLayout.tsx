@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import {
   SidebarProvider,
   Sidebar,
@@ -17,9 +17,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Settings, LogOut, Activity, BarChart3, PieChart, LayoutDashboard } from 'lucide-react'
+import { Settings, Activity, BarChart3, PieChart, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/hooks/use-auth'
 
 const navigation = [
   { name: 'Dashboard SQL', href: '/app', icon: BarChart3, exact: true },
@@ -76,18 +75,11 @@ function AppSidebar() {
 function TopHeader() {
   const { toggleSidebar } = useSidebar()
   const location = useLocation()
-  const { user, signOut } = useAuth()
-  const navigate = useNavigate()
 
   const currentNav =
     navigation.find((n) =>
       n.exact ? location.pathname === n.href : location.pathname.startsWith(n.href),
     ) || navigation[0]
-
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/')
-  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white/80 px-4 sm:px-6 backdrop-blur-md shadow-sm">
@@ -103,32 +95,23 @@ function TopHeader() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 rounded-full ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sl-orange focus-visible:ring-offset-2 hover:bg-slate-50 p-1 pl-3 border border-transparent hover:border-slate-200">
               <span className="text-sm font-medium text-slate-700 hidden sm:block">
-                {user?.user_metadata?.name || 'Administrador'}
+                Administrador
               </span>
               <Avatar className="size-9 border border-slate-200 shadow-sm">
                 <AvatarImage
-                  src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${user?.id || '1'}`}
+                  src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=1`}
                   alt="Avatar"
                 />
-                <AvatarFallback className="bg-sl-blue text-white">
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
+                <AvatarFallback className="bg-sl-blue text-white">A</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 mt-2">
             <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 cursor-default hover:bg-transparent">
-              <span className="font-medium text-sm text-slate-900">
-                {user?.user_metadata?.name || 'Administrador'}
+              <span className="font-medium text-sm text-slate-900">Administrador</span>
+              <span className="text-xs text-slate-500 max-w-[180px] truncate">
+                admin@servicelogic.com
               </span>
-              <span className="text-xs text-slate-500 max-w-[180px] truncate">{user?.email}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-red-600 cursor-pointer p-3 mt-1 border-t hover:bg-red-50 hover:text-red-700 font-medium"
-            >
-              <LogOut className="mr-2 size-4" />
-              <span>Sair da plataforma</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
