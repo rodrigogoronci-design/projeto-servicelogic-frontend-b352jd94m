@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { ChartFormData } from '@/types/chart'
 import { ChartRenderer } from './ChartRenderer'
@@ -25,19 +25,18 @@ export function ChartLivePreview({ formData }: ChartLivePreviewProps) {
       setLoading(true)
       setError(null)
       try {
-        const { data: res, error: fnError } = await supabase.functions.invoke('get-chart-preview', {
-          body: {
-            usuario_id: user?.id,
+        const res = await pb.send('/backend/v1/get-chart-preview', {
+          method: 'POST',
+          body: JSON.stringify({
             nome_tabela: formData.nome_tabela,
             campos_selecionados: formData.campos_selecionados,
             tipo_grafico: formData.tipo_grafico,
-          },
+          }),
         })
-        if (fnError) throw fnError
         if (res.error) throw new Error(res.error)
         setData(res.data || [])
       } catch (err: any) {
-        setError(err.message)
+        setError(err.response?.error || err.message || 'Falha ao carregar dados do SQL Server')
       } finally {
         setLoading(false)
       }

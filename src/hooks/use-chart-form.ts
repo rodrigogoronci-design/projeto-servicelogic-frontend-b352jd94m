@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase/client'
+import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { ChartFormData, ChartField } from '@/types/chart'
@@ -30,16 +30,17 @@ export function useChartForm(id?: string) {
     const fetchTables = async () => {
       if (!user) return
       try {
-        const { data: res, error } = await supabase.functions.invoke('get-sql-tables', {
-          body: { action: 'get_tables', usuario_id: user.id },
+        const res = await pb.send('/backend/v1/get-sql-tables', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'get_tables' }),
         })
-        if (error) throw error
         if (res.error) throw new Error(res.error)
         setTables(res.data.map((t: any) => t.table_name))
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar tabelas',
-          description: err.message,
+          description:
+            err.response?.error || err.message || 'Falha ao buscar tabelas do SQL Server',
           variant: 'destructive',
         })
       }
@@ -55,10 +56,10 @@ export function useChartForm(id?: string) {
       }
       setLoadingSchema(true)
       try {
-        const { data: res, error } = await supabase.functions.invoke('get-sql-tables', {
-          body: { action: 'get_columns', table_name: formData.table_name, usuario_id: user.id },
+        const res = await pb.send('/backend/v1/get-sql-tables', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'get_columns', table_name: formData.table_name }),
         })
-        if (error) throw error
         if (res.error) throw new Error(res.error)
 
         const fetchedCols = res.data.map((c: any) => ({ name: c.column_name, type: c.data_type }))
@@ -72,7 +73,8 @@ export function useChartForm(id?: string) {
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar colunas',
-          description: err.message,
+          description:
+            err.response?.error || err.message || 'Falha ao buscar colunas do SQL Server',
           variant: 'destructive',
         })
       } finally {
