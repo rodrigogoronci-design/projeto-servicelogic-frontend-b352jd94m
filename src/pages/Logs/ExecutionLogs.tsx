@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -20,15 +19,19 @@ import {
 } from '@/components/ui/select'
 import { RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
+import pb from '@/lib/pocketbase/client'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function ExecutionLogs() {
   const { user } = useAuth()
   const [logsSql, setLogsSql] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const { toast } = useToast()
 
   const [filterDate, setFilterDate] = useState('')
@@ -37,25 +40,25 @@ export default function ExecutionLogs() {
   const fetchLogs = async () => {
     if (!user) return
     setLoading(true)
+    setErrorMsg(null)
 
-    const { data: resSql, error } = await supabase
-      .from('log_execucoes_sql' as any)
-      .select('*')
-      .eq('usuario_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (error) {
+    try {
+      const records = await pb.collection('execution_logs').getList(1, 100, {
+        filter: `user_id = "${user.id}"`,
+        sort: '-created',
+      })
+      setLogsSql(records.items || [])
+    } catch (error: any) {
+      const msg = getErrorMessage(error)
+      setErrorMsg(msg)
       toast({
-        title: 'Erro ao buscar logs SQL',
-        description: error.message,
+        title: 'Erro ao buscar logs',
+        description: msg,
         variant: 'destructive',
       })
-    } else {
-      setLogsSql(resSql || [])
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -64,14 +67,15 @@ export default function ExecutionLogs() {
 
   const applyFilters = (logs: any[], dateField: string) => {
     return logs.filter((log) => {
-      const matchDate = filterDate ? log[dateField].startsWith(filterDate) : true
+      const matchDate = filterDate && log[dateField] ? log[dateField].startsWith(filterDate) : true
       const matchStatus =
-        filterStatus === 'todos' || log.status.toLowerCase().includes(filterStatus.toLowerCase())
+        filterStatus === 'todos' ||
+        (log.status && log.status.toLowerCase().includes(filterStatus.toLowerCase()))
       return matchDate && matchStatus
     })
   }
 
-  const filteredSql = applyFilters(logsSql, 'created_at')
+  const filteredSql = applyFilters(logsSql, 'created')
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -110,55 +114,85 @@ export default function ExecutionLogs() {
         </div>
       </div>
 
+      {errorMsg && (
+        <Alert variant="destructive">
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>{errorMsg}</AlertDescription>
+        </Alert>
+      )}
+
       <Card className="border-slate-200 shadow-sm border-t-4 border-t-sl-blue mt-4">
         <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
           <CardTitle className="text-lg">Operações SQL Server</CardTitle>
-          <CardDescription>Testes de conexão e atualizações de dashboard.</CardDescription>
+          <CardDescription>Testes de conexão e execuções de queries do sistema.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead>Data/Hora</TableHead>
-                <TableHead>Tipo de Operação</TableHead>
+                <TableHead>Query SQL</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Mensagem de Erro</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSql.length === 0 && (
+              {loading && logsSql.length === 0 ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredSql.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8 text-slate-500">
                     Nenhum log encontrado.
                   </TableCell>
                 </TableRow>
-              )}
-              {filteredSql.map((log) => (
-                <TableRow key={log.id} className="hover:bg-slate-50/50">
-                  <TableCell className="whitespace-nowrap font-medium text-slate-600">
-                    {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')}
-                  </TableCell>
-                  <TableCell className="font-medium">{log.operation_type}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        log.status.includes('Sucesso')
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
-                      }
+              ) : (
+                filteredSql.map((log) => (
+                  <TableRow key={log.id} className="hover:bg-slate-50/50">
+                    <TableCell className="whitespace-nowrap font-medium text-slate-600">
+                      {log.created ? format(new Date(log.created), 'dd/MM/yyyy HH:mm:ss') : '-'}
+                    </TableCell>
+                    <TableCell
+                      className="font-medium max-w-[250px] truncate"
+                      title={log.sql_query || ''}
                     >
-                      {log.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell
-                    className="text-slate-500 max-w-xs truncate"
-                    title={log.error_message || ''}
-                  >
-                    {log.error_message || '-'}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      {log.sql_query || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          log.status && log.status.toLowerCase().includes('sucesso')
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-red-50 text-red-700 border-red-200'
+                        }
+                      >
+                        {log.status || 'Desconhecido'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell
+                      className="text-slate-500 max-w-xs truncate"
+                      title={log.error_message || ''}
+                    >
+                      {log.error_message || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
