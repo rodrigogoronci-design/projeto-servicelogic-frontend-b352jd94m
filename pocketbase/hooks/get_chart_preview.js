@@ -2,6 +2,10 @@ routerAdd(
   'POST',
   '/backend/v1/get-chart-preview',
   (e) => {
+    if (!e.auth && !e.hasSuperuserAuth()) {
+      return e.unauthorizedError('Não autorizado. Sessão inválida ou ausente.')
+    }
+
     const body = e.requestInfo().body || {}
     const nome_tabela = body.nome_tabela
     const campos = body.campos_selecionados || []

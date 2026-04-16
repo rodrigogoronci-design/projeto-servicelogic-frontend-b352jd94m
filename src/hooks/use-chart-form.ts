@@ -18,6 +18,9 @@ export function useChartForm(id?: string) {
   const [loadingSchema, setLoadingSchema] = useState(false)
   const [userEditedDesc, setUserEditedDesc] = useState(false)
 
+  const [previewData, setPreviewData] = useState<any[]>([])
+  const [loadingPreview, setLoadingPreview] = useState(false)
+
   const [formData, setFormData] = useState<ChartFormData>({
     name: '',
     table_name: '',
@@ -32,6 +35,10 @@ export function useChartForm(id?: string) {
       try {
         const res = await pb.send('/backend/v1/get-sql-tables', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: pb.authStore.token ? `Bearer ${pb.authStore.token}` : '',
+          },
           body: JSON.stringify({ action: 'get_tables' }),
         })
         if (res.error) throw new Error(res.error)
@@ -58,6 +65,10 @@ export function useChartForm(id?: string) {
       try {
         const res = await pb.send('/backend/v1/get-sql-tables', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: pb.authStore.token ? `Bearer ${pb.authStore.token}` : '',
+          },
           body: JSON.stringify({ action: 'get_columns', table_name: formData.table_name }),
         })
         if (res.error) throw new Error(res.error)
@@ -136,6 +147,44 @@ export function useChartForm(id?: string) {
     }
   }, [generatedDescription, userEditedDesc, formData.table_name, formData.fields_config.length])
 
+  const fetchPreview = async () => {
+    if (!formData.table_name || formData.fields_config.length === 0) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione uma tabela e configure os campos para ver a prévia.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setLoadingPreview(true)
+    try {
+      const res = await pb.send('/backend/v1/get-chart-preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: pb.authStore.token ? `Bearer ${pb.authStore.token}` : '',
+        },
+        body: JSON.stringify({
+          nome_tabela: formData.table_name,
+          campos_selecionados: formData.fields_config,
+        }),
+      })
+
+      if (res.error) throw new Error(res.error)
+      setPreviewData(res.data)
+      toast({ title: 'Sucesso', description: 'Prévia carregada com sucesso.' })
+    } catch (err: any) {
+      toast({
+        title: 'Erro na Prévia',
+        description: err.response?.error || err.message || 'Falha ao carregar prévia.',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.table_name || !formData.type) {
@@ -176,5 +225,8 @@ export function useChartForm(id?: string) {
     setUserEditedDesc,
     generatedDescription,
     handleSubmit,
+    fetchPreview,
+    previewData,
+    loadingPreview,
   }
 }

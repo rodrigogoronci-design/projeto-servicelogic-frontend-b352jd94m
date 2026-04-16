@@ -2,6 +2,10 @@ routerAdd(
   'POST',
   '/backend/v1/get-sql-tables',
   (e) => {
+    if (!e.auth && !e.hasSuperuserAuth()) {
+      return e.unauthorizedError('Não autorizado. Sessão inválida ou ausente.')
+    }
+
     const body = e.requestInfo().body || {}
 
     try {
